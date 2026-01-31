@@ -1,0 +1,208 @@
+service: jurix-api
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    DATABASE_URL: ${env:DATABASE_URL}
+    JWT_SECRET: ${env:JWT_SECRET}
+    JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
+    AWS_REGION_CUSTOM: ${self:provider.region}
+    S3_BUCKET: ${env:S3_BUCKET, ''}
+
+plugins:
+  - serverless-offline
+  - serverless-esbuild
+
+custom:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    target: node20
+    platform: node
+    external:
+      - '@prisma/client'
+      - '@aws-sdk/*'
+
+functions:
+  private:
+    handler: src/functions/private-lambda.handler
+    events:
+      # Organizations
+      - http:
+          path: /organizations
+          method: get
+          cors: true
+      - http:
+          path: /organizations
+          method: put
+          cors: true
+
+      # Lawyers
+      - http:
+          path: /lawyers
+          method: get
+          cors: true
+      - http:
+          path: /lawyers
+          method: post
+          cors: true
+      - http:
+          path: /lawyers/{id}
+          method: get
+          cors: true
+      - http:
+          path: /lawyers/{id}
+          method: put
+          cors: true
+      - http:
+          path: /lawyers/{id}
+          method: delete
+          cors: true
+
+      # Columns
+      - http:
+          path: /columns
+          method: get
+          cors: true
+      - http:
+          path: /columns
+          method: post
+          cors: true
+      - http:
+          path: /columns/{id}
+          method: put
+          cors: true
+      - http:
+          path: /columns/{id}
+          method: delete
+          cors: true
+
+      # Cases
+      - http:
+          path: /cases
+          method: get
+          cors: true
+      - http:
+          path: /cases
+          method: post
+          cors: true
+      - http:
+          path: /cases/{id}
+          method: get
+          cors: true
+      - http:
+          path: /cases/{id}
+          method: put
+          cors: true
+      - http:
+          path: /cases/{id}
+          method: delete
+          cors: true
+      - http:
+          path: /cases/{id}/move
+          method: patch
+          cors: true
+      - http:
+          path: /cases/{id}/assign
+          method: patch
+          cors: true
+
+      # Documents
+      - http:
+          path: /documents
+          method: get
+          cors: true
+      - http:
+          path: /documents
+          method: post
+          cors: true
+      - http:
+          path: /documents/{id}
+          method: put
+          cors: true
+      - http:
+          path: /documents/{id}
+          method: delete
+          cors: true
+      - http:
+          path: /documents/{id}/approve
+          method: patch
+          cors: true
+      - http:
+          path: /documents/{id}/reject
+          method: patch
+          cors: true
+
+      # Notifications
+      - http:
+          path: /notifications
+          method: get
+          cors: true
+      - http:
+          path: /notifications
+          method: post
+          cors: true
+      - http:
+          path: /notifications/{id}
+          method: delete
+          cors: true
+      - http:
+          path: /notifications/{id}/read
+          method: patch
+          cors: true
+      - http:
+          path: /notifications/read-all
+          method: patch
+          cors: true
+
+      # Share Links (authenticated)
+      - http:
+          path: /share-links
+          method: post
+          cors: true
+
+      # Me
+      - http:
+          path: /me
+          method: get
+          cors: true
+
+  public:
+    handler: src/functions/public-lambda.handler
+    events:
+      # Auth
+      - http:
+          path: /auth
+          method: post
+          cors: true
+      - http:
+          path: /auth/login
+          method: post
+          cors: true
+
+      # Share Links (public)
+      - http:
+          path: /share-links/{id}
+          method: get
+          cors: true
+      - http:
+          path: /share-links/{id}/upload
+          method: post
+          cors: true
+
+package:
+  individually: true
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'

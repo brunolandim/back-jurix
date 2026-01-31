@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LawyerRole {
+  owner
+  admin
+  lawyer
+}
+
+enum Priority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum DocumentStatus {
+  pending
+  pending_approval
+  rejected
+  received
+}
+
+enum RejectionReason {
+  low_quality
+  wrong_document
+  incomplete
+  illegible
+  other
+}
+
+enum NotificationType {
+  hearing
+  deadline
+  meeting
+  task
+  other
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  document  String   @unique
+  email     String?
+  phone     String?
+  logo      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  lawyers Lawyer[]
+  columns Column[]
+
+  @@index([document])
+  @@index([active])
+  @@map("organizations")
+}
+
+model Lawyer {
+  id             String     @id @default(uuid())
+  organizationId String     @map("organization_id")
+  name           String
+  email          String     @unique
+  passwordHash   String     @map("password_hash")
+  phone          String?
+  photo          String?
+  oab            String     @unique
+  specialty      String?
+  role           LawyerRole @default(lawyer)
+  active         Boolean    @default(true)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedCases  LegalCase[]        @relation("AssignedCases")
+  createdCases   LegalCase[]        @relation("CreatedCases")
+  notifications  CaseNotification[]
+  createdLinks   ShareableLink[]
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([oab])
+  @@index([role])
+  @@index([active])
+  @@map("lawyers")
+}
+
+model Column {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  title          String
+  key            String?
+  isDefault      Boolean  @default(false) @map("is_default")
+  order          Int
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cases        LegalCase[]
+
+  @@index([organizationId])
+  @@index([organizationId, order])
+  @@map("columns")
+}
+
+model LegalCase {
+  id          String   @id @default(uuid())
+  columnId    String   @map("column_id")
+  number      String   @unique
+  title       String
+  description String?
+  client      String
+  priority    Priority @default(medium)
+  order       Float
+  assignedTo  String?  @map("assigned_to")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  column         Column             @relation(fields: [columnId], references: [id], onDelete: Restrict)
+  assignee       Lawyer?            @relation("AssignedCases", fields: [assignedTo], references: [id], onDelete: SetNull)
+  creator        Lawyer             @relation("CreatedCases", fields: [createdBy], references: [id], onDelete: Restrict)
+  documents      DocumentRequest[]
+  notifications  CaseNotification[]
+  shareableLinks ShareableLink[]
+
+  @@index([columnId])
+  @@index([assignedTo])
+  @@index([number])
+  @@index([priority])
+  @@index([createdBy])
+  @@map("legal_cases")
+}
+
+model DocumentRequest {
+  id              String           @id @default(uuid())
+  caseId          String           @map("case_id")
+  name            String
+  description     String?
+  status          DocumentStatus   @default(pending)
+  fileUrl         String?          @map("file_url")
+  requestedAt     DateTime         @default(now()) @map("requested_at")
+  uploadedAt      DateTime?        @map("uploaded_at")
+  receivedAt      DateTime?        @map("received_at")
+  rejectedAt      DateTime?        @map("rejected_at")
+  rejectionReason RejectionReason? @map("rejection_reason")
+  rejectionNote   String?          @map("rejection_note")
+
+  case  LegalCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  links LinkDocument[]
+
+  @@index([caseId])
+  @@index([status])
+  @@map("document_requests")
+}
+
+model CaseNotification {
+  id        String           @id @default(uuid())
+  caseId    String           @map("case_id")
+  lawyerId  String?          @map("lawyer_id")
+  type      NotificationType
+  message   String?
+  date      DateTime
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  isSent    Boolean          @default(false) @map("is_sent")
+  sentAt    DateTime?        @map("sent_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  case   LegalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  lawyer Lawyer?   @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([lawyerId])
+  @@index([date])
+  @@index([lawyerId, isRead])
+  @@index([isSent, date])
+  @@map("case_notifications")
+}
+
+model ShareableLink {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  caseId    String   @map("case_id")
+  isExpired Boolean  @default(false) @map("is_expired")
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  case      LegalCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  creator   Lawyer         @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  documents LinkDocument[]
+
+  @@index([token])
+  @@index([caseId])
+  @@map("shareable_links")
+}
+
+model LinkDocument {
+  linkId     String @map("link_id")
+  documentId String @map("document_id")
+
+  link     ShareableLink   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  document DocumentRequest @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([linkId, documentId])
+  @@index([linkId])
+  @@index([documentId])
+  @@map("link_documents")
+}

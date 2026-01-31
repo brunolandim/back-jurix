@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: jurix-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jurix
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: jurix-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/jurix
+      JWT_SECRET: sua-chave-secreta-com-pelo-menos-32-caracteres
+      JWT_EXPIRES_IN: 7d
+      AWS_REGION: us-east-1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - /app/node_modules
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: jurix-migrate
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/jurix
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma db push && npx tsx scripts/seed.ts"
+    profiles:
+      - setup
+
+volumes:
+  postgres_data:
