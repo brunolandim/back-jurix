@@ -10,7 +10,7 @@ provider:
   memorySize: 512
   timeout: 30
   environment:
-    NODE_ENV: ${self:provider.stage}
+    NODE_ENV: ${env:NODE_ENV, 'development'}
     DATABASE_URL: ${env:DATABASE_URL}
     JWT_SECRET: ${env:JWT_SECRET}
     JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
@@ -22,6 +22,9 @@ plugins:
   - serverless-esbuild
 
 custom:
+  serverless-offline:
+    httpPort: 8008
+    host: 0.0.0.0
   esbuild:
     bundle: true
     minify: true
@@ -29,8 +32,16 @@ custom:
     target: node20
     platform: node
     external:
-      - '@prisma/client'
-      - '@aws-sdk/*'
+        - '@prisma/client'
+        - '.prisma/client'
+        - '@aws-sdk/*'
+    packager: npm
+    packagePath: package.json
+    watch:
+      pattern:
+        - 'src/**/*.ts'
+      ignore:
+        - '.esbuild'
 
 functions:
   private:
@@ -202,7 +213,6 @@ functions:
 package:
   individually: true
   patterns:
-    - '!node_modules/.prisma/client/libquery_engine-*'
-    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
+    - 'node_modules/@prisma/client/**'
+    - 'node_modules/.prisma/**'
+
