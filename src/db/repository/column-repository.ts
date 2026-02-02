@@ -1,4 +1,4 @@
-import { getPrisma } from '../prisma';
+import type { PrismaClient } from '../prisma';
 import type { IColumnRepository } from '../interfaces/icolumn-repository';
 import type {
   Column,
@@ -7,19 +7,21 @@ import type {
 } from '../../types';
 
 export class ColumnRepository implements IColumnRepository {
+  constructor(private prisma: PrismaClient) {}
+
   async findById(id: string): Promise<Column | null> {
-    return getPrisma().column.findUnique({ where: { id } });
+    return this.prisma.column.findUnique({ where: { id } });
   }
 
   async findByOrganization(organizationId: string): Promise<Column[]> {
-    return getPrisma().column.findMany({
+    return this.prisma.column.findMany({
       where: { organizationId },
       orderBy: { order: 'asc' },
     });
   }
 
   async create(input: CreateColumnInput): Promise<Column> {
-    return getPrisma().column.create({
+    return this.prisma.column.create({
       data: {
         organizationId: input.organizationId,
         title: input.title,
@@ -54,7 +56,7 @@ export class ColumnRepository implements IColumnRepository {
       return this.findById(id);
     }
 
-    return getPrisma().column.update({
+    return this.prisma.column.update({
       where: { id },
       data: updateData,
     });
@@ -62,7 +64,7 @@ export class ColumnRepository implements IColumnRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await getPrisma().column.delete({
+      await this.prisma.column.delete({
         where: {
           id,
           isDefault: false,
@@ -75,7 +77,7 @@ export class ColumnRepository implements IColumnRepository {
   }
 
   async getMaxOrder(organizationId: string): Promise<number> {
-    const result = await getPrisma().column.aggregate({
+    const result = await this.prisma.column.aggregate({
       where: { organizationId },
       _max: { order: true },
     });
@@ -84,7 +86,7 @@ export class ColumnRepository implements IColumnRepository {
   }
 
   async hasCases(columnId: string): Promise<boolean> {
-    const count = await getPrisma().legalCase.count({
+    const count = await this.prisma.legalCase.count({
       where: { columnId },
     });
 

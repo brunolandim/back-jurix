@@ -1,4 +1,4 @@
-import { getPrisma } from '../prisma';
+import type { PrismaClient } from '../prisma';
 import type { IDocumentRepository } from '../interfaces/idocument-repository';
 import type {
   DocumentRequest,
@@ -8,12 +8,14 @@ import type {
 import type { RejectionReason } from '../../enum';
 
 export class DocumentRepository implements IDocumentRepository {
+  constructor(private prisma: PrismaClient) {}
+
   async findById(id: string): Promise<DocumentRequest | null> {
-    return getPrisma().documentRequest.findUnique({ where: { id } });
+    return this.prisma.documentRequest.findUnique({ where: { id } });
   }
 
   async findByCase(caseId: string): Promise<DocumentRequest[]> {
-    return getPrisma().documentRequest.findMany({
+    return this.prisma.documentRequest.findMany({
       where: { caseId },
       orderBy: { requestedAt: 'desc' },
     });
@@ -22,13 +24,13 @@ export class DocumentRepository implements IDocumentRepository {
   async findByIds(ids: string[]): Promise<DocumentRequest[]> {
     if (ids.length === 0) return [];
 
-    return getPrisma().documentRequest.findMany({
+    return this.prisma.documentRequest.findMany({
       where: { id: { in: ids } },
     });
   }
 
   async create(input: CreateDocumentRequestInput): Promise<DocumentRequest> {
-    return getPrisma().documentRequest.create({
+    return this.prisma.documentRequest.create({
       data: {
         caseId: input.caseId,
         name: input.name,
@@ -47,14 +49,14 @@ export class DocumentRepository implements IDocumentRepository {
       return this.findById(id);
     }
 
-    return getPrisma().documentRequest.update({
+    return this.prisma.documentRequest.update({
       where: { id },
       data: updateData,
     });
   }
 
   async upload(id: string, fileUrl: string): Promise<DocumentRequest | null> {
-    return getPrisma().documentRequest.update({
+    return this.prisma.documentRequest.update({
       where: { id },
       data: {
         fileUrl,
@@ -68,7 +70,7 @@ export class DocumentRepository implements IDocumentRepository {
   }
 
   async approve(id: string): Promise<DocumentRequest | null> {
-    return getPrisma().documentRequest.update({
+    return this.prisma.documentRequest.update({
       where: { id },
       data: {
         status: 'received',
@@ -78,7 +80,7 @@ export class DocumentRepository implements IDocumentRepository {
   }
 
   async reject(id: string, reason: RejectionReason, note?: string): Promise<DocumentRequest | null> {
-    return getPrisma().documentRequest.update({
+    return this.prisma.documentRequest.update({
       where: { id },
       data: {
         status: 'rejected',
@@ -91,7 +93,7 @@ export class DocumentRepository implements IDocumentRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await getPrisma().documentRequest.delete({ where: { id } });
+      await this.prisma.documentRequest.delete({ where: { id } });
       return true;
     } catch {
       return false;

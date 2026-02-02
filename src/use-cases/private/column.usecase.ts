@@ -1,5 +1,8 @@
-import { ColumnRepository, CaseRepository } from '../../db/repository';
 import { NotFoundError, ForbiddenError, ValidationError } from '../../errors';
+import type {
+  IColumnRepository,
+  ICaseRepository,
+} from '../../db/interfaces';
 import type {
   Column,
   CreateColumnInput,
@@ -12,13 +15,10 @@ export interface ColumnWithCases extends Column {
 }
 
 export class ColumnUseCase {
-  private columnRepo: ColumnRepository;
-  private caseRepo: CaseRepository;
-
-  constructor() {
-    this.columnRepo = new ColumnRepository();
-    this.caseRepo = new CaseRepository();
-  }
+  constructor(
+    private columnRepo: IColumnRepository,
+    private caseRepo: ICaseRepository
+  ) {}
 
   async list(organizationId: string): Promise<Column[]> {
     return this.columnRepo.findByOrganization(organizationId);

@@ -1,4 +1,4 @@
-import { getPrisma } from '../prisma';
+import type { PrismaClient } from '../prisma';
 import type { ICaseRepository } from '../interfaces/icase-repository';
 import type {
   LegalCase,
@@ -6,15 +6,17 @@ import type {
   UpdateLegalCaseInput,
 } from '../../types';
 
-export class CaseRepository implements ICaseRepository {
+export class LegalCaseRepository implements ICaseRepository {
+  constructor(private prisma: PrismaClient) {}
+
   async findById(id: string): Promise<LegalCase | null> {
-    return getPrisma().legalCase.findFirst({
+    return this.prisma.legalCase.findFirst({
       where: { id },
     });
   }
 
   async findByColumn(columnId: string) {
-    return getPrisma().legalCase.findMany({
+    return this.prisma.legalCase.findMany({
       where: { columnId },
       orderBy: { order: 'asc' },
       include: {
@@ -41,21 +43,21 @@ export class CaseRepository implements ICaseRepository {
   }
 
   async findByOrganization(organizationId: string): Promise<LegalCase[]> {
-    return getPrisma().legalCase.findMany({
+    return this.prisma.legalCase.findMany({
       where: { organizationId },
       orderBy: { updatedAt: 'desc' },
     });
   }
 
   async findByAssignee(lawyerId: string): Promise<LegalCase[]> {
-    return getPrisma().legalCase.findMany({
+    return this.prisma.legalCase.findMany({
       where: { assignedTo: lawyerId },
       orderBy: { updatedAt: 'desc' },
     });
   }
 
   async create(input: CreateLegalCaseInput): Promise<LegalCase> {
-    return getPrisma().legalCase.create({
+    return this.prisma.legalCase.create({
       data: {
         organizationId: input.organizationId,
         columnId: input.columnId,
@@ -87,7 +89,7 @@ export class CaseRepository implements ICaseRepository {
       return this.findById(id);
     }
 
-    return getPrisma().legalCase.update({
+    return this.prisma.legalCase.update({
       where: { id },
       data: updateData,
     });
@@ -95,7 +97,7 @@ export class CaseRepository implements ICaseRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await getPrisma().legalCase.delete({ where: { id } });
+      await this.prisma.legalCase.delete({ where: { id } });
       return true;
     } catch {
       return false;
@@ -103,7 +105,7 @@ export class CaseRepository implements ICaseRepository {
   }
 
   async getMaxOrder(columnId: string): Promise<number> {
-    const result = await getPrisma().legalCase.aggregate({
+    const result = await this.prisma.legalCase.aggregate({
       where: { columnId },
       _max: { order: true },
     });

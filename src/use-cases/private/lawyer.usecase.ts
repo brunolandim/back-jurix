@@ -1,5 +1,5 @@
-import { LawyerRepository } from '../../db/repository';
 import { NotFoundError, ConflictError, ForbiddenError } from '../../errors';
+import type { ILawyerRepository } from '../../db/interfaces';
 import type {
   LawyerPublic,
   CreateLawyerInput,
@@ -9,11 +9,7 @@ import type {
 import { toPublicLawyer } from '../../types';
 
 export class LawyerUseCase {
-  private lawyerRepo: LawyerRepository;
-
-  constructor() {
-    this.lawyerRepo = new LawyerRepository();
-  }
+  constructor(private lawyerRepo: ILawyerRepository) {}
 
   async list(organizationId: string, activeOnly = true): Promise<LawyerPublic[]> {
     const lawyers = await this.lawyerRepo.findByOrganization(organizationId, activeOnly);

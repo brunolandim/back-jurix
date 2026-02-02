@@ -1,4 +1,4 @@
-import { getPrisma } from '../prisma';
+import type { PrismaClient } from '../prisma';
 import type { INotificationRepository } from '../interfaces/inotification-repository';
 import type {
   CaseNotification,
@@ -7,12 +7,14 @@ import type {
 } from '../../types';
 
 export class NotificationRepository implements INotificationRepository {
+  constructor(private prisma: PrismaClient) {}
+
   async findById(id: string): Promise<CaseNotification | null> {
-    return getPrisma().caseNotification.findUnique({ where: { id } });
+    return this.prisma.caseNotification.findUnique({ where: { id } });
   }
 
   async findByLawyer(lawyerId: string, unreadOnly = false): Promise<CaseNotification[]> {
-    return getPrisma().caseNotification.findMany({
+    return this.prisma.caseNotification.findMany({
       where: {
         lawyerId,
         ...(unreadOnly && { isRead: false }),
@@ -22,7 +24,7 @@ export class NotificationRepository implements INotificationRepository {
   }
 
   async findByCase(caseId: string): Promise<CaseNotification[]> {
-    return getPrisma().caseNotification.findMany({
+    return this.prisma.caseNotification.findMany({
       where: { caseId },
       orderBy: { date: 'desc' },
     });
@@ -30,7 +32,7 @@ export class NotificationRepository implements INotificationRepository {
 
   async findPendingToSend(): Promise<CaseNotification[]> {
     const now = new Date();
-    return getPrisma().caseNotification.findMany({
+    return this.prisma.caseNotification.findMany({
       where: {
         isSent: false,
         date: { lte: now },
@@ -40,7 +42,7 @@ export class NotificationRepository implements INotificationRepository {
   }
 
   async create(input: CreateNotificationInput): Promise<CaseNotification> {
-    return getPrisma().caseNotification.create({
+    return this.prisma.caseNotification.create({
       data: {
         caseId: input.caseId,
         lawyerId: input.lawyerId ?? null,
@@ -62,14 +64,14 @@ export class NotificationRepository implements INotificationRepository {
       return this.findById(id);
     }
 
-    return getPrisma().caseNotification.update({
+    return this.prisma.caseNotification.update({
       where: { id },
       data: updateData,
     });
   }
 
   async markAsRead(id: string): Promise<CaseNotification | null> {
-    return getPrisma().caseNotification.update({
+    return this.prisma.caseNotification.update({
       where: { id },
       data: {
         isRead: true,
@@ -79,7 +81,7 @@ export class NotificationRepository implements INotificationRepository {
   }
 
   async markAllAsRead(lawyerId: string): Promise<number> {
-    const result = await getPrisma().caseNotification.updateMany({
+    const result = await this.prisma.caseNotification.updateMany({
       where: {
         lawyerId,
         isRead: false,
@@ -94,7 +96,7 @@ export class NotificationRepository implements INotificationRepository {
   }
 
   async markAsSent(id: string): Promise<CaseNotification | null> {
-    return getPrisma().caseNotification.update({
+    return this.prisma.caseNotification.update({
       where: { id },
       data: {
         isSent: true,
@@ -105,7 +107,7 @@ export class NotificationRepository implements INotificationRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await getPrisma().caseNotification.delete({ where: { id } });
+      await this.prisma.caseNotification.delete({ where: { id } });
       return true;
     } catch {
       return false;

@@ -23,11 +23,21 @@ import {
   OrganizationUseCase,
   LawyerUseCase,
   ColumnUseCase,
-  CaseUseCase,
+  LegalCaseUseCase,
   DocumentUseCase,
   NotificationUseCase,
 } from '../use-cases/private';
 import { ShareLinkUseCase } from '../use-cases/public';
+import {
+  OrganizationRepository,
+  LawyerRepository,
+  ColumnRepository,
+  LegalCaseRepository,
+  DocumentRepository,
+  NotificationRepository,
+  ShareLinkRepository,
+} from '../db/repository';
+import { getPrisma } from '../db/prisma';
 import type { AuthContext } from '../types';
 
 interface RouteParams {
@@ -39,13 +49,22 @@ interface RouteParams {
 
 type RouteHandler = (params: RouteParams) => Promise<APIGatewayProxyResult>;
 
-const organizationUseCase = new OrganizationUseCase();
-const lawyerUseCase = new LawyerUseCase();
-const columnUseCase = new ColumnUseCase();
-const caseUseCase = new CaseUseCase();
-const documentUseCase = new DocumentUseCase();
-const notificationUseCase = new NotificationUseCase();
-const shareLinkUseCase = new ShareLinkUseCase();
+const prisma = getPrisma();
+const organizationRepo = new OrganizationRepository(prisma);
+const lawyerRepo = new LawyerRepository(prisma);
+const columnRepo = new ColumnRepository(prisma);
+const caseRepo = new LegalCaseRepository(prisma);
+const documentRepo = new DocumentRepository(prisma);
+const notificationRepo = new NotificationRepository(prisma);
+const shareLinkRepo = new ShareLinkRepository(prisma);
+
+const organizationUseCase = new OrganizationUseCase(organizationRepo, columnRepo);
+const lawyerUseCase = new LawyerUseCase(lawyerRepo);
+const columnUseCase = new ColumnUseCase(columnRepo, caseRepo);
+const caseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo);
+const documentUseCase = new DocumentUseCase(documentRepo, caseRepo);
+const notificationUseCase = new NotificationUseCase(notificationRepo, caseRepo);
+const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo);
 
 const routes: Record<string, Record<string, RouteHandler>> = {
   get: {

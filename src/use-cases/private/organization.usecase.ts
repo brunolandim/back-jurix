@@ -1,6 +1,9 @@
-import { OrganizationRepository, ColumnRepository } from '../../db/repository';
 import { NotFoundError } from '../../errors';
 import { DEFAULT_COLUMNS } from '../../config/constants';
+import type {
+  IOrganizationRepository,
+  IColumnRepository,
+} from '../../db/interfaces';
 import type {
   Organization,
   CreateOrganizationInput,
@@ -8,13 +11,10 @@ import type {
 } from '../../types';
 
 export class OrganizationUseCase {
-  private orgRepo: OrganizationRepository;
-  private columnRepo: ColumnRepository;
-
-  constructor() {
-    this.orgRepo = new OrganizationRepository();
-    this.columnRepo = new ColumnRepository();
-  }
+  constructor(
+    private orgRepo: IOrganizationRepository,
+    private columnRepo: IColumnRepository
+  ) {}
 
   async getById(id: string): Promise<Organization> {
     const org = await this.orgRepo.findById(id);

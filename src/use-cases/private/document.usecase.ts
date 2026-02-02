@@ -1,9 +1,8 @@
-import {
-  DocumentRepository,
-  CaseRepository,
-  ColumnRepository,
-} from '../../db/repository';
-import { NotFoundError, UnauthorizedError, ValidationError } from '../../errors';
+import { NotFoundError, ValidationError } from '../../errors';
+import type {
+  IDocumentRepository,
+  ICaseRepository,
+} from '../../db/interfaces';
 import type {
   DocumentRequest,
   CreateDocumentRequestInput,
@@ -13,23 +12,15 @@ import type {
 import type { RejectionReason } from '../../enum';
 
 export class DocumentUseCase {
-  private documentRepo: DocumentRepository;
-  private caseRepo: CaseRepository;
-  private columnRepo: ColumnRepository;
-
-  constructor() {
-    this.documentRepo = new DocumentRepository();
-    this.caseRepo = new CaseRepository();
-    this.columnRepo = new ColumnRepository();
-  }
+  constructor(
+    private documentRepo: IDocumentRepository,
+    private caseRepo: ICaseRepository
+  ) {}
 
   private async verifyCaseOwnership(caseId: string, organizationId: string): Promise<void> {
     const legalCase = await this.caseRepo.findById(caseId);
     if (!legalCase || legalCase.organizationId !== organizationId) {
       throw new NotFoundError('Case', caseId);
-    }
-    if (legalCase.organizationId !== organizationId) {
-      throw new UnauthorizedError();
     }
   }
 

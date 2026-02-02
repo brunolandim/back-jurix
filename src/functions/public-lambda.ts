@@ -4,6 +4,13 @@ import { parseBody } from '../helpers/parse-body';
 import { validate } from '../validations/validate';
 import { loginSchema, uploadDocumentSchema } from '../validations/schemas';
 import { AuthUseCase, ShareLinkUseCase } from '../use-cases/public';
+import {
+  LawyerRepository,
+  LegalCaseRepository,
+  DocumentRepository,
+  ShareLinkRepository,
+} from '../db/repository';
+import { getPrisma } from '../db/prisma';
 
 interface RouteParams {
   event: APIGatewayProxyEvent;
@@ -13,8 +20,14 @@ interface RouteParams {
 
 type RouteHandler = (params: RouteParams) => Promise<APIGatewayProxyResult>;
 
-const authUseCase = new AuthUseCase();
-const shareLinkUseCase = new ShareLinkUseCase();
+const prisma = getPrisma();
+const lawyerRepo = new LawyerRepository(prisma);
+const caseRepo = new LegalCaseRepository(prisma);
+const documentRepo = new DocumentRepository(prisma);
+const shareLinkRepo = new ShareLinkRepository(prisma);
+
+const authUseCase = new AuthUseCase(lawyerRepo);
+const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo);
 
 const routes: Record<string, Record<string, RouteHandler>> = {
   get: {

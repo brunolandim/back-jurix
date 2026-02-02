@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+export type { PrismaClient };
+
 let prisma: PrismaClient | null = null;
 
 export function getPrisma(): PrismaClient {

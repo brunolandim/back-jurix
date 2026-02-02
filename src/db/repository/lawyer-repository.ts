@@ -1,4 +1,4 @@
-import { getPrisma } from '../prisma';
+import type { PrismaClient } from '../prisma';
 import type { ILawyerRepository } from '../interfaces/ilawyer-repository';
 import type {
   Lawyer,
@@ -8,24 +8,26 @@ import type {
 import { hashPassword } from '../../utils/password';
 
 export class LawyerRepository implements ILawyerRepository {
+  constructor(private prisma: PrismaClient) {}
+
   async findById(id: string): Promise<Lawyer | null> {
-    return getPrisma().lawyer.findUnique({ where: { id } });
+    return this.prisma.lawyer.findUnique({ where: { id } });
   }
 
   async findByEmail(email: string): Promise<Lawyer | null> {
-    return getPrisma().lawyer.findUnique({
+    return this.prisma.lawyer.findUnique({
       where: { email: email.toLowerCase() },
     });
   }
 
   async findByOab(oab: string): Promise<Lawyer | null> {
-    return getPrisma().lawyer.findUnique({
+    return this.prisma.lawyer.findUnique({
       where: { oab: oab.toUpperCase() },
     });
   }
 
   async findByOrganization(organizationId: string, activeOnly = true): Promise<Lawyer[]> {
-    return getPrisma().lawyer.findMany({
+    return this.prisma.lawyer.findMany({
       where: {
         organizationId,
         ...(activeOnly && { active: true }),
@@ -37,7 +39,7 @@ export class LawyerRepository implements ILawyerRepository {
   async create(input: CreateLawyerInput): Promise<Lawyer> {
     const passwordHash = await hashPassword(input.password);
 
-    return getPrisma().lawyer.create({
+    return this.prisma.lawyer.create({
       data: {
         organizationId: input.organizationId,
         name: input.name,
@@ -70,14 +72,14 @@ export class LawyerRepository implements ILawyerRepository {
       return this.findById(id);
     }
 
-    return getPrisma().lawyer.update({
+    return this.prisma.lawyer.update({
       where: { id },
       data: updateData,
     });
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await getPrisma().lawyer.update({
+    const result = await this.prisma.lawyer.update({
       where: { id },
       data: { active: false },
     });

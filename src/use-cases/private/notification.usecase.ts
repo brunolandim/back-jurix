@@ -1,5 +1,8 @@
-import { NotificationRepository, CaseRepository } from '../../db/repository';
 import { NotFoundError, ForbiddenError } from '../../errors';
+import type {
+  INotificationRepository,
+  ICaseRepository,
+} from '../../db/interfaces';
 import type {
   CaseNotification,
   CreateNotificationInput,
@@ -7,13 +10,10 @@ import type {
 } from '../../types';
 
 export class NotificationUseCase {
-  private notificationRepo: NotificationRepository;
-  private caseRepo: CaseRepository;
-
-  constructor() {
-    this.notificationRepo = new NotificationRepository();
-    this.caseRepo = new CaseRepository();
-  }
+  constructor(
+    private notificationRepo: INotificationRepository,
+    private caseRepo: ICaseRepository
+  ) {}
 
   async listByLawyer(context: AuthContext): Promise<CaseNotification[]> {
     return this.notificationRepo.findByLawyer(context.lawyerId);
@@ -24,8 +24,8 @@ export class NotificationUseCase {
     input: Omit<CreateNotificationInput, 'caseId'>,
     context: AuthContext
   ): Promise<CaseNotification> {
-    const legalCase = await this.caseRepo.findById(caseId, context.organizationId);
-    if (!legalCase) {
+    const legalCase = await this.caseRepo.findById(caseId);
+    if (!legalCase || legalCase.organizationId !== context.organizationId) {
       throw new NotFoundError('Case', caseId);
     }
 
@@ -64,8 +64,8 @@ export class NotificationUseCase {
       throw new NotFoundError('Notification', id);
     }
 
-    const legalCase = await this.caseRepo.findById(notification.caseId, context.organizationId);
-    if (!legalCase) {
+    const legalCase = await this.caseRepo.findById(notification.caseId);
+    if (!legalCase || legalCase.organizationId !== context.organizationId) {
       throw new NotFoundError('Case', notification.caseId);
     }
 

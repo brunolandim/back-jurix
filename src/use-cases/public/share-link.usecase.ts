@@ -1,33 +1,21 @@
-import {
-  ShareLinkRepository,
-  DocumentRepository,
-  CaseRepository,
-  ColumnRepository,
-} from '../../db/repository';
 import { NotFoundError, ValidationError, ForbiddenError } from '../../errors';
+import type {
+  IShareLinkRepository,
+  IDocumentRepository,
+  ICaseRepository,
+} from '../../db/interfaces';
 import type { ShareableLinkWithDocuments, AuthContext } from '../../types';
 
 export class ShareLinkUseCase {
-  private shareLinkRepo: ShareLinkRepository;
-  private documentRepo: DocumentRepository;
-  private caseRepo: CaseRepository;
-  private columnRepo: ColumnRepository;
-
-  constructor() {
-    this.shareLinkRepo = new ShareLinkRepository();
-    this.documentRepo = new DocumentRepository();
-    this.caseRepo = new CaseRepository();
-    this.columnRepo = new ColumnRepository();
-  }
+  constructor(
+    private shareLinkRepo: IShareLinkRepository,
+    private documentRepo: IDocumentRepository,
+    private caseRepo: ICaseRepository
+  ) {}
 
   private async verifyCaseOwnership(caseId: string, organizationId: string): Promise<void> {
     const legalCase = await this.caseRepo.findById(caseId);
-    if (!legalCase) {
-      throw new NotFoundError('Case', caseId);
-    }
-
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== organizationId) {
+    if (!legalCase || legalCase.organizationId !== organizationId) {
       throw new NotFoundError('Case', caseId);
     }
   }

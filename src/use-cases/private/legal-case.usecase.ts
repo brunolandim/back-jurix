@@ -1,9 +1,9 @@
-import {
-  CaseRepository,
-  ColumnRepository,
-  LawyerRepository,
-} from '../../db/repository';
-import { NotFoundError, ConflictError } from '../../errors';
+import { NotFoundError } from '../../errors';
+import type {
+  ICaseRepository,
+  IColumnRepository,
+  ILawyerRepository,
+} from '../../db/interfaces';
 import type {
   LegalCase,
   LegalCaseWithAssignee,
@@ -14,23 +14,19 @@ import type {
 } from '../../types';
 import { toPublicLawyer } from '../../types';
 
-export class CaseUseCase {
-  private caseRepo: CaseRepository;
-  private columnRepo: ColumnRepository;
-  private lawyerRepo: LawyerRepository;
-
-  constructor() {
-    this.caseRepo = new CaseRepository();
-    this.columnRepo = new ColumnRepository();
-    this.lawyerRepo = new LawyerRepository();
-  }
+export class LegalCaseUseCase {
+  constructor(
+    private legalCaseRepo: ICaseRepository,
+    private columnRepo: IColumnRepository,
+    private lawyerRepo: ILawyerRepository
+  ) {}
 
   async list(organizationId: string): Promise<LegalCase[]> {
-    return this.caseRepo.findByOrganization(organizationId);
+    return this.legalCaseRepo.findByOrganization(organizationId);
   }
 
   async getById(id: string): Promise<LegalCaseWithAssignee> {
-    const legalCase = await this.caseRepo.findById(id);
+    const legalCase = await this.legalCaseRepo.findById(id);
 
     if (!legalCase) {
       throw new NotFoundError('Case', id);
@@ -63,9 +59,9 @@ export class CaseUseCase {
       }
     }
 
-    const maxOrder = await this.caseRepo.getMaxOrder(input.columnId);
+    const maxOrder = await this.legalCaseRepo.getMaxOrder(input.columnId);
 
-    return this.caseRepo.create({
+    return this.legalCaseRepo.create({
       ...input,
       organizationId: context.organizationId,
       createdBy: context.lawyerId,
@@ -78,7 +74,7 @@ export class CaseUseCase {
     input: UpdateLegalCaseInput,
     context: AuthContext
   ): Promise<LegalCase> {
-    const legalCase = await this.caseRepo.findById(id);
+    const legalCase = await this.legalCaseRepo.findById(id);
 
     if (!legalCase) {
       throw new NotFoundError('Case', id);
@@ -98,12 +94,12 @@ export class CaseUseCase {
       }
     }
 
-    const updated = await this.caseRepo.update(id, input);
+    const updated = await this.legalCaseRepo.update(id, input);
     return updated!;
   }
 
   async move(id: string, input: MoveCaseInput, context: AuthContext): Promise<LegalCase> {
-    const legalCase = await this.caseRepo.findById(id);
+    const legalCase = await this.legalCaseRepo.findById(id);
 
     if (!legalCase) {
       throw new NotFoundError('Case', id);
@@ -114,7 +110,7 @@ export class CaseUseCase {
       throw new NotFoundError('Column', input.columnId);
     }
 
-    const updated = await this.caseRepo.update(id, {
+    const updated = await this.legalCaseRepo.update(id, {
       columnId: input.columnId,
       order: input.order,
     });
@@ -127,7 +123,7 @@ export class CaseUseCase {
     assignedTo: string | null,
     context: AuthContext
   ): Promise<LegalCase> {
-    const legalCase = await this.caseRepo.findById(id);
+    const legalCase = await this.legalCaseRepo.findById(id);
 
     if (!legalCase) {
       throw new NotFoundError('Case', id);
@@ -140,17 +136,17 @@ export class CaseUseCase {
       }
     }
 
-    const updated = await this.caseRepo.update(id, { assignedTo });
+    const updated = await this.legalCaseRepo.update(id, { assignedTo });
     return updated!;
   }
 
   async delete(id: string, context: AuthContext): Promise<void> {
-    const legalCase = await this.caseRepo.findById(id);
+    const legalCase = await this.legalCaseRepo.findById(id);
 
     if (!legalCase) {
       throw new NotFoundError('Case', id);
     }
 
-    await this.caseRepo.delete(id);
+    await this.legalCaseRepo.delete(id);
   }
 }

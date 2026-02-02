@@ -1,4 +1,4 @@
-import { getPrisma } from '../prisma';
+import type { PrismaClient } from '../prisma';
 import type { IOrganizationRepository } from '../interfaces/iorganization-repository';
 import type {
   Organization,
@@ -7,16 +7,18 @@ import type {
 } from '../../types';
 
 export class OrganizationRepository implements IOrganizationRepository {
+  constructor(private prisma: PrismaClient) {}
+
   async findById(id: string): Promise<Organization | null> {
-    return getPrisma().organization.findUnique({ where: { id } });
+    return this.prisma.organization.findUnique({ where: { id } });
   }
 
   async findByDocument(document: string): Promise<Organization | null> {
-    return getPrisma().organization.findUnique({ where: { document } });
+    return this.prisma.organization.findUnique({ where: { document } });
   }
 
   async create(input: CreateOrganizationInput): Promise<Organization> {
-    return getPrisma().organization.create({
+    return this.prisma.organization.create({
       data: {
         name: input.name,
         document: input.document,
@@ -39,7 +41,7 @@ export class OrganizationRepository implements IOrganizationRepository {
       return this.findById(id);
     }
 
-    return getPrisma().organization.update({
+    return this.prisma.organization.update({
       where: { id },
       data: updateData,
     });

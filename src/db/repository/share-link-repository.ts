@@ -1,4 +1,4 @@
-import { getPrisma } from '../prisma';
+import type { PrismaClient } from '../prisma';
 import type { IShareLinkRepository } from '../interfaces/ishare-link-repository';
 import type {
   ShareableLink,
@@ -9,12 +9,14 @@ import type {
 import { generateToken } from '../../utils/token';
 
 export class ShareLinkRepository implements IShareLinkRepository {
+  constructor(private prisma: PrismaClient) {}
+
   async findById(id: string): Promise<ShareableLink | null> {
-    return getPrisma().shareableLink.findUnique({ where: { id } });
+    return this.prisma.shareableLink.findUnique({ where: { id } });
   }
 
   async findByToken(token: string): Promise<ShareableLink | null> {
-    return getPrisma().shareableLink.findUnique({ where: { token } });
+    return this.prisma.shareableLink.findUnique({ where: { token } });
   }
 
   async findByTokenWithDocuments(token: string): Promise<ShareableLinkWithDocuments | null> {
@@ -30,7 +32,7 @@ export class ShareLinkRepository implements IShareLinkRepository {
   }
 
   async findByCase(caseId: string): Promise<ShareableLink[]> {
-    return getPrisma().shareableLink.findMany({
+    return this.prisma.shareableLink.findMany({
       where: { caseId },
       orderBy: { createdAt: 'desc' },
     });
@@ -39,7 +41,7 @@ export class ShareLinkRepository implements IShareLinkRepository {
   async create(input: CreateShareableLinkInput): Promise<ShareableLinkWithDocuments> {
     const token = generateToken();
 
-    const link = await getPrisma().$transaction(async (tx) => {
+    const link = await this.prisma.$transaction(async (tx) => {
       const createdLink = await tx.shareableLink.create({
         data: {
           token,
@@ -69,7 +71,7 @@ export class ShareLinkRepository implements IShareLinkRepository {
   }
 
   async getDocuments(linkId: string): Promise<DocumentRequest[]> {
-    const linkDocuments = await getPrisma().linkDocument.findMany({
+    const linkDocuments = await this.prisma.linkDocument.findMany({
       where: { linkId },
       include: { document: true },
     });
@@ -78,7 +80,7 @@ export class ShareLinkRepository implements IShareLinkRepository {
   }
 
   async expire(id: string): Promise<ShareableLink | null> {
-    return getPrisma().shareableLink.update({
+    return this.prisma.shareableLink.update({
       where: { id },
       data: { isExpired: true },
     });
