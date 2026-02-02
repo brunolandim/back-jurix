@@ -6,7 +6,6 @@ import type {
 
 export interface ICaseRepository {
   findById(id: string): Promise<LegalCase | null>;
-  findByNumber(number: string): Promise<LegalCase | null>;
   findByColumn(columnId: string): Promise<LegalCase[]>;
   findByOrganization(organizationId: string): Promise<LegalCase[]>;
   findByAssignee(lawyerId: string): Promise<LegalCase[]>;

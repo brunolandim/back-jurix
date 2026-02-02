@@ -8,25 +8,41 @@ import type {
 
 export class CaseRepository implements ICaseRepository {
   async findById(id: string): Promise<LegalCase | null> {
-    return getPrisma().legalCase.findUnique({ where: { id } });
+    return getPrisma().legalCase.findFirst({
+      where: { id },
+    });
   }
 
-  async findByNumber(number: string): Promise<LegalCase | null> {
-    return getPrisma().legalCase.findUnique({ where: { number } });
-  }
-
-  async findByColumn(columnId: string): Promise<LegalCase[]> {
+  async findByColumn(columnId: string) {
     return getPrisma().legalCase.findMany({
       where: { columnId },
       orderBy: { order: 'asc' },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+      },
     });
   }
 
   async findByOrganization(organizationId: string): Promise<LegalCase[]> {
     return getPrisma().legalCase.findMany({
-      where: {
-        column: { organizationId },
-      },
+      where: { organizationId },
       orderBy: { updatedAt: 'desc' },
     });
   }
@@ -41,6 +57,7 @@ export class CaseRepository implements ICaseRepository {
   async create(input: CreateLegalCaseInput): Promise<LegalCase> {
     return getPrisma().legalCase.create({
       data: {
+        organizationId: input.organizationId,
         columnId: input.columnId,
         number: input.number,
         title: input.title,

@@ -29,15 +29,10 @@ export class CaseUseCase {
     return this.caseRepo.findByOrganization(organizationId);
   }
 
-  async getById(id: string, organizationId: string): Promise<LegalCaseWithAssignee> {
+  async getById(id: string): Promise<LegalCaseWithAssignee> {
     const legalCase = await this.caseRepo.findById(id);
 
     if (!legalCase) {
-      throw new NotFoundError('Case', id);
-    }
-
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== organizationId) {
       throw new NotFoundError('Case', id);
     }
 
@@ -53,17 +48,12 @@ export class CaseUseCase {
   }
 
   async create(
-    input: Omit<CreateLegalCaseInput, 'createdBy' | 'order'>,
+    input: Omit<CreateLegalCaseInput, 'organizationId' | 'createdBy' | 'order'>,
     context: AuthContext
   ): Promise<LegalCase> {
     const column = await this.columnRepo.findById(input.columnId);
     if (!column || column.organizationId !== context.organizationId) {
       throw new NotFoundError('Column', input.columnId);
-    }
-
-    const existing = await this.caseRepo.findByNumber(input.number);
-    if (existing) {
-      throw new ConflictError('Case number already exists', 'number');
     }
 
     if (input.assignedTo) {
@@ -77,6 +67,7 @@ export class CaseUseCase {
 
     return this.caseRepo.create({
       ...input,
+      organizationId: context.organizationId,
       createdBy: context.lawyerId,
       order: maxOrder + 1,
     });
@@ -93,22 +84,10 @@ export class CaseUseCase {
       throw new NotFoundError('Case', id);
     }
 
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== context.organizationId) {
-      throw new NotFoundError('Case', id);
-    }
-
     if (input.columnId && input.columnId !== legalCase.columnId) {
       const newColumn = await this.columnRepo.findById(input.columnId);
       if (!newColumn || newColumn.organizationId !== context.organizationId) {
         throw new NotFoundError('Column', input.columnId);
-      }
-    }
-
-    if (input.number && input.number !== legalCase.number) {
-      const existing = await this.caseRepo.findByNumber(input.number);
-      if (existing) {
-        throw new ConflictError('Case number already exists', 'number');
       }
     }
 
@@ -127,11 +106,6 @@ export class CaseUseCase {
     const legalCase = await this.caseRepo.findById(id);
 
     if (!legalCase) {
-      throw new NotFoundError('Case', id);
-    }
-
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== context.organizationId) {
       throw new NotFoundError('Case', id);
     }
 
@@ -159,11 +133,6 @@ export class CaseUseCase {
       throw new NotFoundError('Case', id);
     }
 
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== context.organizationId) {
-      throw new NotFoundError('Case', id);
-    }
-
     if (assignedTo) {
       const assignee = await this.lawyerRepo.findById(assignedTo);
       if (!assignee || assignee.organizationId !== context.organizationId) {
@@ -179,11 +148,6 @@ export class CaseUseCase {
     const legalCase = await this.caseRepo.findById(id);
 
     if (!legalCase) {
-      throw new NotFoundError('Case', id);
-    }
-
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== context.organizationId) {
       throw new NotFoundError('Case', id);
     }
 

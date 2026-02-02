@@ -3,6 +3,7 @@ import type { LawyerPublic } from './lawyer';
 
 export interface LegalCase {
   id: string;
+  organizationId: string;
   columnId: string;
   number: string;
   title: string;
@@ -21,6 +22,7 @@ export interface LegalCaseWithAssignee extends LegalCase {
 }
 
 export interface CreateLegalCaseInput {
+  organizationId: string;
   columnId: string;
   number: string;
   title: string;

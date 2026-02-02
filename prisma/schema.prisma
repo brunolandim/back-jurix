@@ -57,6 +57,7 @@ model Organization {
 
   lawyers Lawyer[]
   columns Column[]
+  cases   LegalCase[]
 
   @@index([document])
   @@index([active])
@@ -96,7 +97,6 @@ model Column {
   id             String   @id @default(uuid())
   organizationId String   @map("organization_id")
   title          String
-  key            String?
   isDefault      Boolean  @default(false) @map("is_default")
   order          Int
   createdAt      DateTime @default(now()) @map("created_at")
@@ -110,19 +110,21 @@ model Column {
 }
 
 model LegalCase {
-  id          String   @id @default(uuid())
-  columnId    String   @map("column_id")
-  number      String   @unique
-  title       String
-  description String?
-  client      String
-  priority    Priority @default(medium)
-  order       Float
-  assignedTo  String?  @map("assigned_to")
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  columnId       String   @map("column_id")
+  number         String   @unique
+  title          String
+  description    String?
+  client         String
+  priority       Priority @default(medium)
+  order          Float
+  assignedTo     String?  @map("assigned_to")
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   column         Column             @relation(fields: [columnId], references: [id], onDelete: Restrict)
   assignee       Lawyer?            @relation("AssignedCases", fields: [assignedTo], references: [id], onDelete: SetNull)
   creator        Lawyer             @relation("CreatedCases", fields: [createdBy], references: [id], onDelete: Restrict)
@@ -130,6 +132,7 @@ model LegalCase {
   notifications  CaseNotification[]
   shareableLinks ShareableLink[]
 
+  @@index([organizationId])
   @@index([columnId])
   @@index([assignedTo])
   @@index([number])

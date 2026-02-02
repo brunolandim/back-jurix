@@ -3,7 +3,7 @@ import {
   CaseRepository,
   ColumnRepository,
 } from '../../db/repository';
-import { NotFoundError, ValidationError } from '../../errors';
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../errors';
 import type {
   DocumentRequest,
   CreateDocumentRequestInput,
@@ -25,13 +25,11 @@ export class DocumentUseCase {
 
   private async verifyCaseOwnership(caseId: string, organizationId: string): Promise<void> {
     const legalCase = await this.caseRepo.findById(caseId);
-    if (!legalCase) {
+    if (!legalCase || legalCase.organizationId !== organizationId) {
       throw new NotFoundError('Case', caseId);
     }
-
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== organizationId) {
-      throw new NotFoundError('Case', caseId);
+    if (legalCase.organizationId !== organizationId) {
+      throw new UnauthorizedError();
     }
   }
 
@@ -109,14 +107,13 @@ export class DocumentUseCase {
     return updated!;
   }
 
-  async delete(id: string, caseId: string, context: AuthContext): Promise<void> {
-    await this.verifyCaseOwnership(caseId, context.organizationId);
-
+  async delete(id: string, context: AuthContext): Promise<void> {
     const document = await this.documentRepo.findById(id);
-    if (!document || document.caseId !== caseId) {
+    if (!document) {
       throw new NotFoundError('Document', id);
     }
 
+    await this.verifyCaseOwnership(document.caseId, context.organizationId);
     await this.documentRepo.delete(id);
   }
 }

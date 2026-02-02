@@ -1,8 +1,4 @@
-import {
-  NotificationRepository,
-  CaseRepository,
-  ColumnRepository,
-} from '../../db/repository';
+import { NotificationRepository, CaseRepository } from '../../db/repository';
 import { NotFoundError, ForbiddenError } from '../../errors';
 import type {
   CaseNotification,
@@ -13,24 +9,10 @@ import type {
 export class NotificationUseCase {
   private notificationRepo: NotificationRepository;
   private caseRepo: CaseRepository;
-  private columnRepo: ColumnRepository;
 
   constructor() {
     this.notificationRepo = new NotificationRepository();
     this.caseRepo = new CaseRepository();
-    this.columnRepo = new ColumnRepository();
-  }
-
-  private async verifyCaseOwnership(caseId: string, organizationId: string): Promise<void> {
-    const legalCase = await this.caseRepo.findById(caseId);
-    if (!legalCase) {
-      throw new NotFoundError('Case', caseId);
-    }
-
-    const column = await this.columnRepo.findById(legalCase.columnId);
-    if (!column || column.organizationId !== organizationId) {
-      throw new NotFoundError('Case', caseId);
-    }
   }
 
   async listByLawyer(context: AuthContext): Promise<CaseNotification[]> {
@@ -42,7 +24,10 @@ export class NotificationUseCase {
     input: Omit<CreateNotificationInput, 'caseId'>,
     context: AuthContext
   ): Promise<CaseNotification> {
-    await this.verifyCaseOwnership(caseId, context.organizationId);
+    const legalCase = await this.caseRepo.findById(caseId, context.organizationId);
+    if (!legalCase) {
+      throw new NotFoundError('Case', caseId);
+    }
 
     return this.notificationRepo.create({
       caseId,
@@ -79,7 +64,10 @@ export class NotificationUseCase {
       throw new NotFoundError('Notification', id);
     }
 
-    await this.verifyCaseOwnership(notification.caseId, context.organizationId);
+    const legalCase = await this.caseRepo.findById(notification.caseId, context.organizationId);
+    if (!legalCase) {
+      throw new NotFoundError('Case', notification.caseId);
+    }
 
     await this.notificationRepo.delete(id);
   }

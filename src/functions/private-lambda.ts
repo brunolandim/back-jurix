@@ -67,7 +67,7 @@ const routes: Record<string, Record<string, RouteHandler>> = {
     },
     cases: async ({ context, id }) => {
       if (id) {
-        const legalCase = await caseUseCase.getById(id, context.organizationId);
+        const legalCase = await caseUseCase.getById(id);
         return success(legalCase);
       }
       const cases = await caseUseCase.list(context.organizationId);
@@ -238,11 +238,9 @@ const routes: Record<string, Record<string, RouteHandler>> = {
       await caseUseCase.delete(id, context);
       return noContent();
     },
-    documents: async ({ event, context, id }) => {
+    documents: async ({ context, id }) => {
       if (!id) return notFound('Document ID is required');
-      const caseId = event.queryStringParameters?.caseId;
-      if (!caseId) return notFound('Case ID is required');
-      await documentUseCase.delete(id, caseId, context);
+      await documentUseCase.delete(id, context);
       return noContent();
     },
     notifications: async ({ context, id }) => {

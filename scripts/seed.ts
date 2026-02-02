@@ -17,11 +17,8 @@ async function seed() {
     });
     console.log('Created organization:', org.id);
 
-    // Create default columns
     const columns = [
-      { title: 'Novo', key: 'new', order: 0, isDefault: true },
-      { title: 'Em Andamento', key: 'in_progress', order: 1, isDefault: false },
-      { title: 'Concluído', key: 'completed', order: 2, isDefault: false },
+      { title: 'new', order: 0, isDefault: true },
     ];
 
     for (const col of columns) {
@@ -29,7 +26,6 @@ async function seed() {
         data: {
           organizationId: org.id,
           title: col.title,
-          key: col.key,
           isDefault: col.isDefault,
           order: col.order,
         },
