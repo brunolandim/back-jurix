@@ -9,8 +9,7 @@
     "dev": "sls offline start",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx scripts/seed.ts"
+    "setup:dev":"tsx scripts/migrate.ts && tsx scripts/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.525.0",

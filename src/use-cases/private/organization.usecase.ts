@@ -33,7 +33,6 @@ export class OrganizationUseCase {
       DEFAULT_COLUMNS.map((col) => ({
         organizationId: org.id,
         title: col.title,
-        key: col.key,
         isDefault: col.isDefault,
         order: col.order,
       }))

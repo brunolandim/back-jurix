@@ -61,7 +61,7 @@ const shareLinkRepo = new ShareLinkRepository(prisma);
 const organizationUseCase = new OrganizationUseCase(organizationRepo, columnRepo);
 const lawyerUseCase = new LawyerUseCase(lawyerRepo);
 const columnUseCase = new ColumnUseCase(columnRepo, caseRepo);
-const caseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo);
+const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo);
 const documentUseCase = new DocumentUseCase(documentRepo, caseRepo);
 const notificationUseCase = new NotificationUseCase(notificationRepo, caseRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo);
@@ -86,10 +86,10 @@ const routes: Record<string, Record<string, RouteHandler>> = {
     },
     cases: async ({ context, id }) => {
       if (id) {
-        const legalCase = await caseUseCase.getById(id);
+        const legalCase = await legalCaseUseCase.getById(id);
         return success(legalCase);
       }
-      const cases = await caseUseCase.list(context.organizationId);
+      const cases = await legalCaseUseCase.list(context.organizationId);
       return success(cases);
     },
     documents: async ({ event, context }) => {
@@ -128,7 +128,7 @@ const routes: Record<string, Record<string, RouteHandler>> = {
     cases: async ({ event, context }) => {
       const body = parseBody(event);
       const input = validate(createCaseSchema, body);
-      const legalCase = await caseUseCase.create(input, context);
+      const legalCase = await legalCaseUseCase.create(input, context);
       return created(legalCase);
     },
     documents: async ({ event, context }) => {
@@ -181,7 +181,7 @@ const routes: Record<string, Record<string, RouteHandler>> = {
       if (!id) return notFound('Case ID is required');
       const body = parseBody(event);
       const input = validate(updateCaseSchema, body);
-      const legalCase = await caseUseCase.update(id, input, context);
+      const legalCase = await legalCaseUseCase.update(id, input, context);
       return success(legalCase);
     },
     documents: async ({ event, context, id }) => {
@@ -199,14 +199,14 @@ const routes: Record<string, Record<string, RouteHandler>> = {
       if (!id) return notFound('Case ID is required');
       const body = parseBody(event);
       const input = validate(moveCaseSchema, body);
-      const legalCase = await caseUseCase.move(id, input, context);
+      const legalCase = await legalCaseUseCase.move(id, input, context);
       return success(legalCase);
     },
     'cases/assign': async ({ event, context, id }) => {
       if (!id) return notFound('Case ID is required');
       const body = parseBody(event);
       const input = validate(assignCaseSchema, body);
-      const legalCase = await caseUseCase.assign(id, input.assignedTo, context);
+      const legalCase = await legalCaseUseCase.assign(id, input.assignedTo, context);
       return success(legalCase);
     },
     'documents/approve': async ({ event, context, id }) => {
@@ -254,7 +254,7 @@ const routes: Record<string, Record<string, RouteHandler>> = {
     },
     cases: async ({ context, id }) => {
       if (!id) return notFound('Case ID is required');
-      await caseUseCase.delete(id, context);
+      await legalCaseUseCase.delete(id, context);
       return noContent();
     },
     documents: async ({ context, id }) => {

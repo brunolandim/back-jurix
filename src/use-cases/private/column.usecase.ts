@@ -46,7 +46,6 @@ export class ColumnUseCase {
     return this.columnRepo.create({
       organizationId,
       title: input.title,
-      key: input.key,
       order: maxOrder + 1,
     });
   }

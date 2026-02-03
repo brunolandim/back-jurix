@@ -17,20 +17,15 @@ async function seed() {
     });
     console.log('Created organization:', org.id);
 
-    const columns = [
-      { title: 'new', order: 0, isDefault: true },
-    ];
-
-    for (const col of columns) {
       await prisma.column.create({
         data: {
           organizationId: org.id,
-          title: col.title,
-          isDefault: col.isDefault,
-          order: col.order,
+          title: 'new',
+          isDefault: true,
+          order: 0,
         },
       });
-    }
+      
     console.log('Created default columns');
 
     // Create owner lawyer

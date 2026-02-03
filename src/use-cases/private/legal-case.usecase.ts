@@ -1,4 +1,4 @@
-import { NotFoundError } from '../../errors';
+import { NotFoundError, ValidationError } from '../../errors';
 import type {
   ICaseRepository,
   IColumnRepository,
@@ -48,8 +48,11 @@ export class LegalCaseUseCase {
     context: AuthContext
   ): Promise<LegalCase> {
     const column = await this.columnRepo.findById(input.columnId);
-    if (!column || column.organizationId !== context.organizationId) {
+    if (!column) {
       throw new NotFoundError('Column', input.columnId);
+    }
+    if (column.organizationId !== context.organizationId) {
+      throw new ValidationError('Column does not belong to your organization');
     }
 
     if (input.assignedTo) {

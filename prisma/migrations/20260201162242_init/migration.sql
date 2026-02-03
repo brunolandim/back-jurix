@@ -52,7 +52,6 @@ CREATE TABLE "columns" (
     "id" TEXT NOT NULL,
     "organization_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "key" TEXT,
     "is_default" BOOLEAN NOT NULL DEFAULT false,
     "order" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -63,6 +62,7 @@ CREATE TABLE "columns" (
 -- CreateTable
 CREATE TABLE "legal_cases" (
     "id" TEXT NOT NULL,
+    "organization_id" TEXT NOT NULL,
     "column_id" TEXT NOT NULL,
     "number" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -173,6 +173,9 @@ CREATE INDEX "columns_organization_id_order_idx" ON "columns"("organization_id",
 CREATE UNIQUE INDEX "legal_cases_number_key" ON "legal_cases"("number");
 
 -- CreateIndex
+CREATE INDEX "legal_cases_organization_id_idx" ON "legal_cases"("organization_id");
+
+-- CreateIndex
 CREATE INDEX "legal_cases_column_id_idx" ON "legal_cases"("column_id");
 
 -- CreateIndex
@@ -228,6 +231,9 @@ ALTER TABLE "lawyers" ADD CONSTRAINT "lawyers_organization_id_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "columns" ADD CONSTRAINT "columns_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "legal_cases" ADD CONSTRAINT "legal_cases_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "legal_cases" ADD CONSTRAINT "legal_cases_column_id_fkey" FOREIGN KEY ("column_id") REFERENCES "columns"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

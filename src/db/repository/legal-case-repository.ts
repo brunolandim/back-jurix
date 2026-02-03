@@ -12,6 +12,26 @@ export class LegalCaseRepository implements ICaseRepository {
   async findById(id: string): Promise<LegalCase | null> {
     return this.prisma.legalCase.findFirst({
       where: { id },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+      },
     });
   }
 
@@ -38,6 +58,8 @@ export class LegalCaseRepository implements ICaseRepository {
             oab: true,
           },
         },
+        notifications: true,
+        documents: true,
       },
     });
   }
@@ -70,6 +92,26 @@ export class LegalCaseRepository implements ICaseRepository {
         assignedTo: input.assignedTo ?? null,
         createdBy: input.createdBy,
       },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+      },
     });
   }
 
@@ -92,6 +134,26 @@ export class LegalCaseRepository implements ICaseRepository {
     return this.prisma.legalCase.update({
       where: { id },
       data: updateData,
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            photo: true,
+            oab: true,
+          },
+        },
+      },
     });
   }
 

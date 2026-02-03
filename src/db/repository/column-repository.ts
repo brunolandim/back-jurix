@@ -25,7 +25,6 @@ export class ColumnRepository implements IColumnRepository {
       data: {
         organizationId: input.organizationId,
         title: input.title,
-        key: input.key ?? null,
         isDefault: input.isDefault ?? false,
         order: input.order,
       },
@@ -49,7 +48,6 @@ export class ColumnRepository implements IColumnRepository {
     const updateData: Record<string, unknown> = {};
 
     if (input.title !== undefined) updateData.title = input.title;
-    if (input.key !== undefined) updateData.key = input.key;
     if (input.order !== undefined) updateData.order = input.order;
 
     if (Object.keys(updateData).length === 0) {
