@@ -22,3 +22,55 @@ export const ALLOWED_FILE_TYPES = [
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
+
+export const TRIAL_DAYS = 14;
+
+export interface PlanLimits {
+  lawyers: number | null;
+  activeCases: number | null;
+  documents: number | null;
+  shareLinks: number | null;
+}
+
+export interface PlanDefinition {
+  name: string;
+  type: string;
+  price: number;
+  limits: PlanLimits;
+}
+
+export const PLANS: Record<string, PlanDefinition> = {
+  pro: {
+    name: 'Pro',
+    type: 'pro',
+    price: 9700,
+    limits: {
+      lawyers: 3,
+      activeCases: 30,
+      documents: 100,
+      shareLinks: 10,
+    },
+  },
+  business: {
+    name: 'Business',
+    type: 'business',
+    price: 19700,
+    limits: {
+      lawyers: 10,
+      activeCases: 200,
+      documents: 500,
+      shareLinks: 50,
+    },
+  },
+  enterprise: {
+    name: 'Enterprise',
+    type: 'enterprise',
+    price: 39700,
+    limits: {
+      lawyers: null,
+      activeCases: null,
+      documents: null,
+      shareLinks: null,
+    },
+  },
+};

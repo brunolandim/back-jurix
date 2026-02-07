@@ -31,6 +31,15 @@ export class ShareLinkRepository implements IShareLinkRepository {
     };
   }
 
+  async countByOrganization(organizationId: string): Promise<number> {
+    return this.prisma.shareableLink.count({
+      where: {
+        case: { organizationId },
+        isExpired: false,
+      },
+    });
+  }
+
   async findByCase(caseId: string): Promise<ShareableLink[]> {
     return this.prisma.shareableLink.findMany({
       where: { caseId },

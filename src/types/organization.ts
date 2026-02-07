@@ -5,6 +5,7 @@ export interface Organization {
   email: string | null;
   phone: string | null;
   logo: string | null;
+  stripeCustomerId: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;

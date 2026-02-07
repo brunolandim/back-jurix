@@ -10,6 +10,7 @@ export interface IShareLinkRepository {
   findByToken(token: string): Promise<ShareableLink | null>;
   findByTokenWithDocuments(token: string): Promise<ShareableLinkWithDocuments | null>;
   findByCase(caseId: string): Promise<ShareableLink[]>;
+  countByOrganization(organizationId: string): Promise<number>;
   create(input: CreateShareableLinkInput): Promise<ShareableLinkWithDocuments>;
   getDocuments(linkId: string): Promise<DocumentRequest[]>;
   expire(id: string): Promise<ShareableLink | null>;

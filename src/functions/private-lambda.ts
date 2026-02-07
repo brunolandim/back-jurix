@@ -26,6 +26,7 @@ import {
   LegalCaseUseCase,
   DocumentUseCase,
   NotificationUseCase,
+  PlanEnforcerUseCase,
 } from '../use-cases/private';
 import { ShareLinkUseCase } from '../use-cases/public';
 import {
@@ -36,6 +37,7 @@ import {
   DocumentRepository,
   NotificationRepository,
   ShareLinkRepository,
+  SubscriptionRepository,
 } from '../db/repository';
 import { getPrisma } from '../db/prisma';
 import type { AuthContext } from '../types';
@@ -57,11 +59,13 @@ const caseRepo = new LegalCaseRepository(prisma);
 const documentRepo = new DocumentRepository(prisma);
 const notificationRepo = new NotificationRepository(prisma);
 const shareLinkRepo = new ShareLinkRepository(prisma);
+const subscriptionRepo = new SubscriptionRepository(prisma)
 
+const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo,lawyerRepo,caseRepo,documentRepo,shareLinkRepo)
 const organizationUseCase = new OrganizationUseCase(organizationRepo, columnRepo);
-const lawyerUseCase = new LawyerUseCase(lawyerRepo);
+const lawyerUseCase = new LawyerUseCase(lawyerRepo,planEnforcerUseCase);
 const columnUseCase = new ColumnUseCase(columnRepo, caseRepo);
-const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo);
+const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo,planEnforcerUseCase);
 const documentUseCase = new DocumentUseCase(documentRepo, caseRepo);
 const notificationUseCase = new NotificationUseCase(notificationRepo, caseRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo);
@@ -116,7 +120,7 @@ const routes: Record<string, Record<string, RouteHandler>> = {
       const lawyer = await lawyerUseCase.create({
         ...input,
         organizationId: context.organizationId,
-      });
+      }, context);
       return created(lawyer);
     },
     columns: async ({ event, context }) => {

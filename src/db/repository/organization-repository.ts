@@ -28,6 +28,13 @@ export class OrganizationRepository implements IOrganizationRepository {
     });
   }
 
+  async updateStripeCustomerId(id: string, stripeCustomerId: string): Promise<Organization | null> {
+    return this.prisma.organization.update({
+      where: { id },
+      data: { stripeCustomerId },
+    });
+  }
+
   async update(id: string, input: UpdateOrganizationInput): Promise<Organization | null> {
     const updateData: Record<string, unknown> = {};
 

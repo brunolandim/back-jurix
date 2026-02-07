@@ -9,4 +9,5 @@ export interface IOrganizationRepository {
   findByDocument(document: string): Promise<Organization | null>;
   create(input: CreateOrganizationInput): Promise<Organization>;
   update(id: string, input: UpdateOrganizationInput): Promise<Organization | null>;
+  updateStripeCustomerId(id: string, stripeCustomerId: string): Promise<Organization | null>;
 }

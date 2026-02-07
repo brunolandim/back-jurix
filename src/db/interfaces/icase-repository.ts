@@ -9,6 +9,7 @@ export interface ICaseRepository {
   findByColumn(columnId: string): Promise<LegalCase[]>;
   findByOrganization(organizationId: string): Promise<LegalCase[]>;
   findByAssignee(lawyerId: string): Promise<LegalCase[]>;
+  countByOrganization(organizationId: string): Promise<number>;
   create(input: CreateLegalCaseInput): Promise<LegalCase>;
   update(id: string, input: UpdateLegalCaseInput): Promise<LegalCase | null>;
   delete(id: string): Promise<boolean>;

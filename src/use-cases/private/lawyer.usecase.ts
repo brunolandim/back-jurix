@@ -7,9 +7,13 @@ import type {
   AuthContext,
 } from '../../types';
 import { toPublicLawyer } from '../../types';
+import type { PlanEnforcerUseCase } from './plan-enforcer.usecase';
 
 export class LawyerUseCase {
-  constructor(private lawyerRepo: ILawyerRepository) {}
+  constructor(
+    private lawyerRepo: ILawyerRepository,
+    private planEnforcer: PlanEnforcerUseCase
+  ) {}
 
   async list(organizationId: string, activeOnly = true): Promise<LawyerPublic[]> {
     const lawyers = await this.lawyerRepo.findByOrganization(organizationId, activeOnly);
@@ -26,7 +30,13 @@ export class LawyerUseCase {
     return toPublicLawyer(lawyer);
   }
 
-  async create(input: CreateLawyerInput): Promise<LawyerPublic> {
+  async create(input: CreateLawyerInput, context: AuthContext): Promise<LawyerPublic> {
+    await this.planEnforcer.enforce(context.organizationId, 'lawyers');
+
+    if (context.role !== 'owner' && context.role !== 'admin') {
+      throw new ForbiddenError('Only owner or admin can create lawyers');
+    }
+
     const existingEmail = await this.lawyerRepo.findByEmail(input.email);
     if (existingEmail) {
       throw new ConflictError('Email already in use', 'email');

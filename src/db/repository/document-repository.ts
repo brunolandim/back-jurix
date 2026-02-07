@@ -21,6 +21,14 @@ export class DocumentRepository implements IDocumentRepository {
     });
   }
 
+  async countByOrganization(organizationId: string): Promise<number> {
+    return this.prisma.documentRequest.count({
+      where: {
+        case: { organizationId },
+      },
+    });
+  }
+
   async findByIds(ids: string[]): Promise<DocumentRequest[]> {
     if (ids.length === 0) return [];
 

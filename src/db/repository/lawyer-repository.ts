@@ -26,6 +26,12 @@ export class LawyerRepository implements ILawyerRepository {
     });
   }
 
+  async countByOrganization(organizationId: string): Promise<number> {
+    return this.prisma.lawyer.count({
+      where: { organizationId, active: true },
+    });
+  }
+
   async findByOrganization(organizationId: string, activeOnly = true): Promise<Lawyer[]> {
     return this.prisma.lawyer.findMany({
       where: {

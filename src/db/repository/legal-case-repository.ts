@@ -64,6 +64,12 @@ export class LegalCaseRepository implements ICaseRepository {
     });
   }
 
+  async countByOrganization(organizationId: string): Promise<number> {
+    return this.prisma.legalCase.count({
+      where: { organizationId },
+    });
+  }
+
   async findByOrganization(organizationId: string): Promise<LegalCase[]> {
     return this.prisma.legalCase.findMany({
       where: { organizationId },

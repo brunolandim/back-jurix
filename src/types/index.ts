@@ -6,3 +6,4 @@ export * from './document-request';
 export * from './case-notification';
 export * from './shareable-link';
 export * from './context';
+export * from './subscription';

@@ -13,12 +13,14 @@ import type {
   AuthContext,
 } from '../../types';
 import { toPublicLawyer } from '../../types';
+import type { PlanEnforcerUseCase } from './plan-enforcer.usecase';
 
 export class LegalCaseUseCase {
   constructor(
     private legalCaseRepo: ICaseRepository,
     private columnRepo: IColumnRepository,
-    private lawyerRepo: ILawyerRepository
+    private lawyerRepo: ILawyerRepository,
+    private planEnforcer: PlanEnforcerUseCase
   ) {}
 
   async list(organizationId: string): Promise<LegalCase[]> {
@@ -47,6 +49,8 @@ export class LegalCaseUseCase {
     input: Omit<CreateLegalCaseInput, 'organizationId' | 'createdBy' | 'order'>,
     context: AuthContext
   ): Promise<LegalCase> {
+    await this.planEnforcer.enforce(context.organizationId, 'activeCases');
+
     const column = await this.columnRepo.findById(input.columnId);
     if (!column) {
       throw new NotFoundError('Column', input.columnId);

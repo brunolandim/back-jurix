@@ -6,3 +6,4 @@ export * from './case.schema';
 export * from './document.schema';
 export * from './notification.schema';
 export * from './share-link.schema';
+export * from './subscription.schema';

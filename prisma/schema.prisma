@@ -44,6 +44,14 @@ enum NotificationType {
   other
 }
 
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+}
+
 model Organization {
   id        String   @id @default(uuid())
   name      String
@@ -55,12 +63,16 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  lawyers Lawyer[]
-  columns Column[]
-  cases   LegalCase[]
+  stripeCustomerId String? @unique @map("stripe_customer_id")
+
+  lawyers      Lawyer[]
+  columns      Column[]
+  cases        LegalCase[]
+  subscription Subscription?
 
   @@index([document])
   @@index([active])
+  @@index([stripeCustomerId])
   @@map("organizations")
 }
 
@@ -215,4 +227,27 @@ model LinkDocument {
   @@index([linkId])
   @@index([documentId])
   @@map("link_documents")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  organizationId       String             @unique @map("organization_id")
+  stripeSubscriptionId String             @unique @map("stripe_subscription_id")
+  stripePriceId        String             @map("stripe_price_id")
+  plan                 String
+  status               SubscriptionStatus @default(trialing)
+  currentPeriodStart   DateTime           @map("current_period_start")
+  currentPeriodEnd     DateTime           @map("current_period_end")
+  trialEnd             DateTime?          @map("trial_end")
+  cancelAtPeriodEnd    Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt           DateTime?          @map("canceled_at")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@map("subscriptions")
 }

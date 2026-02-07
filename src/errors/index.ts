@@ -4,3 +4,6 @@ export * from './unauthorized.error';
 export * from './forbidden.error';
 export * from './validation.error';
 export * from './conflict.error';
+export * from './plan-limit.error';
+export * from './subscription-required.error';
+export * from './read-only-mode.error';
