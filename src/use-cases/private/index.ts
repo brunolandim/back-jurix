@@ -6,4 +6,3 @@ export * from './document.usecase';
 export * from './notification.usecase';
 export * from './subscription.usecase';
 export * from './plan-enforcer.usecase';
-export * from './plan-limit';

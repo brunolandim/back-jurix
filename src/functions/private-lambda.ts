@@ -18,6 +18,7 @@ import {
   rejectDocumentSchema,
   createNotificationSchema,
   createShareLinkSchema,
+  createCheckoutSchema,
 } from '../validations/schemas';
 import {
   OrganizationUseCase,
@@ -27,6 +28,7 @@ import {
   DocumentUseCase,
   NotificationUseCase,
   PlanEnforcerUseCase,
+  SubscriptionUseCase,
 } from '../use-cases/private';
 import { ShareLinkUseCase } from '../use-cases/public';
 import {
@@ -45,11 +47,38 @@ import type { AuthContext } from '../types';
 interface RouteParams {
   event: APIGatewayProxyEvent;
   context: AuthContext;
-  id?: string;
-  subId?: string;
+  params: Record<string, string>;
 }
 
 type RouteHandler = (params: RouteParams) => Promise<APIGatewayProxyResult>;
+
+type Route = { method: string; pattern: string; handler: RouteHandler };
+
+function matchRoute(routes: Route[], method: string, path: string): { handler: RouteHandler; params: Record<string, string> } | null {
+  const parts = path.split('/').filter(Boolean);
+
+  for (const route of routes) {
+    if (route.method !== method) continue;
+    const routeParts = route.pattern.split('/').filter(Boolean);
+    if (routeParts.length !== parts.length) continue;
+
+    const params: Record<string, string> = {};
+    let match = true;
+
+    for (let i = 0; i < routeParts.length; i++) {
+      if (routeParts[i].startsWith(':')) {
+        params[routeParts[i].slice(1)] = parts[i];
+      } else if (routeParts[i] !== parts[i]) {
+        match = false;
+        break;
+      }
+    }
+
+    if (match) return { handler: route.handler, params };
+  }
+
+  return null;
+}
 
 const prisma = getPrisma();
 const organizationRepo = new OrganizationRepository(prisma);
@@ -59,226 +88,221 @@ const caseRepo = new LegalCaseRepository(prisma);
 const documentRepo = new DocumentRepository(prisma);
 const notificationRepo = new NotificationRepository(prisma);
 const shareLinkRepo = new ShareLinkRepository(prisma);
-const subscriptionRepo = new SubscriptionRepository(prisma)
+const subscriptionRepo = new SubscriptionRepository(prisma);
 
-const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo,lawyerRepo,caseRepo,documentRepo,shareLinkRepo)
+const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo, caseRepo, documentRepo, shareLinkRepo);
+const subscriptionUseCase = new SubscriptionUseCase(subscriptionRepo, organizationRepo, lawyerRepo, caseRepo, documentRepo, shareLinkRepo);
 const organizationUseCase = new OrganizationUseCase(organizationRepo, columnRepo);
-const lawyerUseCase = new LawyerUseCase(lawyerRepo,planEnforcerUseCase);
+const lawyerUseCase = new LawyerUseCase(lawyerRepo, planEnforcerUseCase);
 const columnUseCase = new ColumnUseCase(columnRepo, caseRepo);
-const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo,planEnforcerUseCase);
+const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo, planEnforcerUseCase);
 const documentUseCase = new DocumentUseCase(documentRepo, caseRepo);
 const notificationUseCase = new NotificationUseCase(notificationRepo, caseRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo);
 
-const routes: Record<string, Record<string, RouteHandler>> = {
-  get: {
-    organizations: async ({ context }) => {
-      const org = await organizationUseCase.getById(context.organizationId);
-      return success(org);
-    },
-    lawyers: async ({ context, id }) => {
-      if (id) {
-        const lawyer = await lawyerUseCase.getById(id, context.organizationId);
-        return success(lawyer);
-      }
-      const lawyers = await lawyerUseCase.list(context.organizationId);
-      return success(lawyers);
-    },
-    columns: async ({ context }) => {
-      const columns = await columnUseCase.listWithCases(context.organizationId);
-      return success(columns);
-    },
-    cases: async ({ context, id }) => {
-      if (id) {
-        const legalCase = await legalCaseUseCase.getById(id);
-        return success(legalCase);
-      }
-      const cases = await legalCaseUseCase.list(context.organizationId);
-      return success(cases);
-    },
-    documents: async ({ event, context }) => {
-      const caseId = event.queryStringParameters?.caseId;
-      if (!caseId) {
-        return notFound('Case ID is required');
-      }
-      const documents = await documentUseCase.listByCase(caseId, context);
-      return success(documents);
-    },
-    notifications: async ({ context }) => {
-      const notifications = await notificationUseCase.listByLawyer(context);
-      return success(notifications);
-    },
-    me: async ({ context }) => {
-      const lawyer = await lawyerUseCase.getById(context.lawyerId, context.organizationId);
-      return success(lawyer);
-    },
-  },
-  post: {
-    lawyers: async ({ event, context }) => {
-      const body = parseBody(event);
-      const input = validate(createLawyerSchema, body);
-      const lawyer = await lawyerUseCase.create({
-        ...input,
-        organizationId: context.organizationId,
-      }, context);
-      return created(lawyer);
-    },
-    columns: async ({ event, context }) => {
-      const body = parseBody(event);
-      const input = validate(createColumnSchema, body);
-      const column = await columnUseCase.create(context.organizationId, input);
-      return created(column);
-    },
-    cases: async ({ event, context }) => {
-      const body = parseBody(event);
-      const input = validate(createCaseSchema, body);
-      const legalCase = await legalCaseUseCase.create(input, context);
-      return created(legalCase);
-    },
-    documents: async ({ event, context }) => {
-      const body = parseBody(event) as { caseId?: string; name?: string; description?: string };
-      if (!body?.caseId) {
-        return notFound('Case ID is required');
-      }
-      const input = validate(createDocumentSchema, body);
-      const document = await documentUseCase.create(body.caseId, input, context);
-      return created(document);
-    },
-    notifications: async ({ event, context }) => {
-      const body = parseBody(event) as { caseId?: string } & Record<string, unknown>;
-      if (!body?.caseId) {
-        return notFound('Case ID is required');
-      }
-      const input = validate(createNotificationSchema, body);
-      const notification = await notificationUseCase.create(body.caseId, input, context);
-      return created(notification);
-    },
-    'share-links': async ({ event, context }) => {
-      const body = parseBody(event);
-      const input = validate(createShareLinkSchema, body);
-      const link = await shareLinkUseCase.create(input.caseId, input.documentIds, context);
-      return created(link);
-    },
-  },
-  put: {
-    organizations: async ({ event, context }) => {
-      const body = parseBody(event);
-      const input = validate(updateOrganizationSchema, body);
-      const org = await organizationUseCase.update(context.organizationId, input);
-      return success(org);
-    },
-    lawyers: async ({ event, context, id }) => {
-      if (!id) return notFound('Lawyer ID is required');
-      const body = parseBody(event);
-      const input = validate(updateLawyerSchema, body);
-      const lawyer = await lawyerUseCase.update(id, input, context);
-      return success(lawyer);
-    },
-    columns: async ({ event, context, id }) => {
-      if (!id) return notFound('Column ID is required');
-      const body = parseBody(event);
-      const input = validate(updateColumnSchema, body);
-      const column = await columnUseCase.update(id, context.organizationId, input);
-      return success(column);
-    },
-    cases: async ({ event, context, id }) => {
-      if (!id) return notFound('Case ID is required');
-      const body = parseBody(event);
-      const input = validate(updateCaseSchema, body);
-      const legalCase = await legalCaseUseCase.update(id, input, context);
-      return success(legalCase);
-    },
-    documents: async ({ event, context, id }) => {
-      if (!id) return notFound('Document ID is required');
-      const caseId = event.queryStringParameters?.caseId;
-      if (!caseId) return notFound('Case ID is required');
-      const body = parseBody(event);
-      const input = validate(updateDocumentSchema, body);
-      const document = await documentUseCase.update(id, caseId, input, context);
-      return success(document);
-    },
-  },
-  patch: {
-    'cases/move': async ({ event, context, id }) => {
-      if (!id) return notFound('Case ID is required');
-      const body = parseBody(event);
-      const input = validate(moveCaseSchema, body);
-      const legalCase = await legalCaseUseCase.move(id, input, context);
-      return success(legalCase);
-    },
-    'cases/assign': async ({ event, context, id }) => {
-      if (!id) return notFound('Case ID is required');
-      const body = parseBody(event);
-      const input = validate(assignCaseSchema, body);
-      const legalCase = await legalCaseUseCase.assign(id, input.assignedTo, context);
-      return success(legalCase);
-    },
-    'documents/approve': async ({ event, context, id }) => {
-      if (!id) return notFound('Document ID is required');
-      const caseId = event.queryStringParameters?.caseId;
-      if (!caseId) return notFound('Case ID is required');
-      const document = await documentUseCase.approve(id, caseId, context);
-      return success(document);
-    },
-    'documents/reject': async ({ event, context, id }) => {
-      if (!id) return notFound('Document ID is required');
-      const caseId = event.queryStringParameters?.caseId;
-      if (!caseId) return notFound('Case ID is required');
-      const body = parseBody(event);
-      const input = validate(rejectDocumentSchema, body);
-      const document = await documentUseCase.reject(
-        id,
-        caseId,
-        input.rejectionReason,
-        input.rejectionNote,
-        context
-      );
-      return success(document);
-    },
-    'notifications/read': async ({ context, id }) => {
-      if (!id) return notFound('Notification ID is required');
-      const notification = await notificationUseCase.markAsRead(id, context);
-      return success(notification);
-    },
-    'notifications/read-all': async ({ context }) => {
-      const count = await notificationUseCase.markAllAsRead(context);
-      return success({ count });
-    },
-  },
-  delete: {
-    lawyers: async ({ context, id }) => {
-      if (!id) return notFound('Lawyer ID is required');
-      await lawyerUseCase.delete(id, context);
-      return noContent();
-    },
-    columns: async ({ context, id }) => {
-      if (!id) return notFound('Column ID is required');
-      await columnUseCase.delete(id, context.organizationId);
-      return noContent();
-    },
-    cases: async ({ context, id }) => {
-      if (!id) return notFound('Case ID is required');
-      await legalCaseUseCase.delete(id, context);
-      return noContent();
-    },
-    documents: async ({ context, id }) => {
-      if (!id) return notFound('Document ID is required');
-      await documentUseCase.delete(id, context);
-      return noContent();
-    },
-    notifications: async ({ context, id }) => {
-      if (!id) return notFound('Notification ID is required');
-      await notificationUseCase.delete(id, context);
-      return noContent();
-    },
-  },
-};
+const routes: Route[] = [
+  // Organizations
+  { method: 'get', pattern: 'organizations', handler: async ({ context }) => {
+    const org = await organizationUseCase.getById(context.organizationId);
+    return success(org);
+  }},
+  { method: 'put', pattern: 'organizations', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(updateOrganizationSchema, body);
+    const org = await organizationUseCase.update(context.organizationId, input);
+    return success(org);
+  }},
 
-function parseRoute(path: string): { resource: string; id?: string; subAction?: string } {
-  const parts = path.split('/').filter(Boolean);
-  const [resource, id, subAction] = parts;
-  return { resource, id, subAction };
-}
+  // Lawyers
+  { method: 'get', pattern: 'lawyers', handler: async ({ context }) => {
+    const lawyers = await lawyerUseCase.list(context.organizationId);
+    return success(lawyers);
+  }},
+  { method: 'get', pattern: 'lawyers/:id', handler: async ({ context, params }) => {
+    const lawyer = await lawyerUseCase.getById(params.id, context.organizationId);
+    return success(lawyer);
+  }},
+  { method: 'post', pattern: 'lawyers', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(createLawyerSchema, body);
+    const lawyer = await lawyerUseCase.create({ ...input, organizationId: context.organizationId }, context);
+    return created(lawyer);
+  }},
+  { method: 'put', pattern: 'lawyers/:id', handler: async ({ event, context, params }) => {
+    const body = parseBody(event);
+    const input = validate(updateLawyerSchema, body);
+    const lawyer = await lawyerUseCase.update(params.id, input, context);
+    return success(lawyer);
+  }},
+  { method: 'delete', pattern: 'lawyers/:id', handler: async ({ context, params }) => {
+    await lawyerUseCase.delete(params.id, context);
+    return noContent();
+  }},
+
+  // Columns
+  { method: 'get', pattern: 'columns', handler: async ({ context }) => {
+    const columns = await columnUseCase.listWithCases(context.organizationId);
+    return success(columns);
+  }},
+  { method: 'post', pattern: 'columns', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(createColumnSchema, body);
+    const column = await columnUseCase.create(context.organizationId, input);
+    return created(column);
+  }},
+  { method: 'put', pattern: 'columns/:id', handler: async ({ event, context, params }) => {
+    const body = parseBody(event);
+    const input = validate(updateColumnSchema, body);
+    const column = await columnUseCase.update(params.id, context.organizationId, input);
+    return success(column);
+  }},
+  { method: 'delete', pattern: 'columns/:id', handler: async ({ context, params }) => {
+    await columnUseCase.delete(params.id, context.organizationId);
+    return noContent();
+  }},
+
+  // Cases
+  { method: 'get', pattern: 'cases', handler: async ({ context }) => {
+    const cases = await legalCaseUseCase.list(context.organizationId);
+    return success(cases);
+  }},
+  { method: 'get', pattern: 'cases/:id', handler: async ({ params }) => {
+    const legalCase = await legalCaseUseCase.getById(params.id);
+    return success(legalCase);
+  }},
+  { method: 'post', pattern: 'cases', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(createCaseSchema, body);
+    const legalCase = await legalCaseUseCase.create(input, context);
+    return created(legalCase);
+  }},
+  { method: 'put', pattern: 'cases/:id', handler: async ({ event, context, params }) => {
+    const body = parseBody(event);
+    const input = validate(updateCaseSchema, body);
+    const legalCase = await legalCaseUseCase.update(params.id, input, context);
+    return success(legalCase);
+  }},
+  { method: 'delete', pattern: 'cases/:id', handler: async ({ context, params }) => {
+    await legalCaseUseCase.delete(params.id, context);
+    return noContent();
+  }},
+  { method: 'patch', pattern: 'cases/:id/move', handler: async ({ event, context, params }) => {
+    const body = parseBody(event);
+    const input = validate(moveCaseSchema, body);
+    const legalCase = await legalCaseUseCase.move(params.id, input, context);
+    return success(legalCase);
+  }},
+  { method: 'patch', pattern: 'cases/:id/assign', handler: async ({ event, context, params }) => {
+    const body = parseBody(event);
+    const input = validate(assignCaseSchema, body);
+    const legalCase = await legalCaseUseCase.assign(params.id, input.assignedTo, context);
+    return success(legalCase);
+  }},
+
+  // Documents
+  { method: 'get', pattern: 'documents', handler: async ({ event, context }) => {
+    const caseId = event.queryStringParameters?.caseId;
+    if (!caseId) return notFound('Case ID is required');
+    const documents = await documentUseCase.listByCase(caseId, context);
+    return success(documents);
+  }},
+  { method: 'post', pattern: 'documents', handler: async ({ event, context }) => {
+    const body = parseBody(event) as { caseId?: string; name?: string; description?: string };
+    if (!body?.caseId) return notFound('Case ID is required');
+    const input = validate(createDocumentSchema, body);
+    const document = await documentUseCase.create(body.caseId, input, context);
+    return created(document);
+  }},
+  { method: 'put', pattern: 'documents/:id', handler: async ({ event, context, params }) => {
+    const caseId = event.queryStringParameters?.caseId;
+    if (!caseId) return notFound('Case ID is required');
+    const body = parseBody(event);
+    const input = validate(updateDocumentSchema, body);
+    const document = await documentUseCase.update(params.id, caseId, input, context);
+    return success(document);
+  }},
+  { method: 'delete', pattern: 'documents/:id', handler: async ({ context, params }) => {
+    await documentUseCase.delete(params.id, context);
+    return noContent();
+  }},
+  { method: 'patch', pattern: 'documents/:id/approve', handler: async ({ event, context, params }) => {
+    const caseId = event.queryStringParameters?.caseId;
+    if (!caseId) return notFound('Case ID is required');
+    const document = await documentUseCase.approve(params.id, caseId, context);
+    return success(document);
+  }},
+  { method: 'patch', pattern: 'documents/:id/reject', handler: async ({ event, context, params }) => {
+    const caseId = event.queryStringParameters?.caseId;
+    if (!caseId) return notFound('Case ID is required');
+    const body = parseBody(event);
+    const input = validate(rejectDocumentSchema, body);
+    const document = await documentUseCase.reject(params.id, caseId, input.rejectionReason, input.rejectionNote, context);
+    return success(document);
+  }},
+
+  // Notifications
+  { method: 'get', pattern: 'notifications', handler: async ({ context }) => {
+    const notifications = await notificationUseCase.listByLawyer(context);
+    return success(notifications);
+  }},
+  { method: 'post', pattern: 'notifications', handler: async ({ event, context }) => {
+    const body = parseBody(event) as { caseId?: string } & Record<string, unknown>;
+    if (!body?.caseId) return notFound('Case ID is required');
+    const input = validate(createNotificationSchema, body);
+    const notification = await notificationUseCase.create(body.caseId, input, context);
+    return created(notification);
+  }},
+  { method: 'delete', pattern: 'notifications/:id', handler: async ({ context, params }) => {
+    await notificationUseCase.delete(params.id, context);
+    return noContent();
+  }},
+  { method: 'patch', pattern: 'notifications/:id/read', handler: async ({ context, params }) => {
+    const notification = await notificationUseCase.markAsRead(params.id, context);
+    return success(notification);
+  }},
+  { method: 'patch', pattern: 'notifications/read-all', handler: async ({ context }) => {
+    const count = await notificationUseCase.markAllAsRead(context);
+    return success({ count });
+  }},
+
+  // Share Links
+  { method: 'post', pattern: 'share-links', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(createShareLinkSchema, body);
+    const link = await shareLinkUseCase.create(input.caseId, input.documentIds, context);
+    return created(link);
+  }},
+
+  // Subscriptions
+  { method: 'get', pattern: 'subscriptions', handler: async ({ context }) => {
+    const info = await subscriptionUseCase.getInfo(context);
+    return success(info);
+  }},
+  { method: 'post', pattern: 'subscriptions/checkout', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(createCheckoutSchema, body);
+    const result = await subscriptionUseCase.createCheckout(input.plan, context);
+    return success(result);
+  }},
+  { method: 'post', pattern: 'subscriptions/portal', handler: async ({ context }) => {
+    const result = await subscriptionUseCase.createPortal(context);
+    return success(result);
+  }},
+  { method: 'delete', pattern: 'subscriptions', handler: async ({ context }) => {
+    await subscriptionUseCase.cancel(context);
+    return noContent();
+  }},
+  { method: 'patch', pattern: 'subscriptions/reactivate', handler: async ({ context }) => {
+    await subscriptionUseCase.reactivate(context);
+    return noContent();
+  }},
+
+  // Me
+  { method: 'get', pattern: 'me', handler: async ({ context }) => {
+    const lawyer = await lawyerUseCase.getById(context.lawyerId, context.organizationId);
+    return success(lawyer);
+  }},
+];
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -291,16 +315,15 @@ export const handler = async (
 
     const authContext = authenticate(event);
     const method = event.httpMethod.toLowerCase();
-    const { resource, id, subAction } = parseRoute(event.path);
+    const path = event.path;
 
-    const routeKey = subAction ? `${resource}/${subAction}` : resource;
-    const routeHandler = routes[method]?.[routeKey];
+    const matched = matchRoute(routes, method, path);
 
-    if (!routeHandler) {
+    if (!matched) {
       return notFound('Route not found');
     }
 
-    return await routeHandler({ event, context: authContext, id, subId: subAction });
+    return await matched.handler({ event, context: authContext, params: matched.params });
   } catch (err) {
     return error(err);
   }

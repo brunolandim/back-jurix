@@ -6,8 +6,8 @@ import type {
   IShareLinkRepository,
 } from '../../db/interfaces';
 import { PLANS } from '../../config/constants';
-import { PlanLimitError } from '../../errors';
-import { enforceActiveSubscription } from './plan-limit';
+import { PlanLimitError, SubscriptionRequiredError, ReadOnlyModeError } from '../../errors';
+import type { Subscription } from '../../types';
 
 type ResourceType = 'lawyers' | 'activeCases' | 'documents' | 'shareLinks';
 
@@ -23,7 +23,7 @@ export class PlanEnforcerUseCase {
   async enforce(organizationId: string, resource: ResourceType): Promise<void> {
     const subscription = await this.subscriptionRepo.findByOrganizationId(organizationId);
 
-    enforceActiveSubscription(subscription);
+    this.enforceActiveSubscription(subscription);
 
     const plan = PLANS[subscription!.plan];
     if (!plan) return;
@@ -36,6 +36,24 @@ export class PlanEnforcerUseCase {
     if (current >= limit) {
       throw new PlanLimitError(resource, limit);
     }
+  }
+
+  private enforceActiveSubscription(subscription: Subscription | null): void {
+    if (!subscription) {
+      throw new SubscriptionRequiredError();
+    }
+
+    const { status } = subscription;
+
+    if (status === 'trialing' || status === 'active') {
+      return;
+    }
+
+    if (status === 'past_due') {
+      throw new ReadOnlyModeError();
+    }
+
+    throw new SubscriptionRequiredError();
   }
 
   private async getCount(organizationId: string, resource: ResourceType): Promise<number> {

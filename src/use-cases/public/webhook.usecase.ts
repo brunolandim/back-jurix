@@ -40,14 +40,15 @@ export class WebhookUseCase {
       await this.organizationRepo.updateStripeCustomerId(organizationId, customerId);
     }
 
+    const item = subscription.items.data[0];
     await this.subscriptionRepo.create({
       organizationId,
       stripeSubscriptionId: subscription.id,
       stripePriceId: priceId,
       plan: plan.type,
       status: subscription.status as SubscriptionStatus,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: new Date(item.current_period_start * 1000),
+      currentPeriodEnd: new Date(item.current_period_end * 1000),
       trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
     });
@@ -63,12 +64,13 @@ export class WebhookUseCase {
     const priceId = subscription.items.data[0]?.price?.id;
     const plan = priceId ? getPlanByPriceId(priceId) : null;
 
+    const updatedItem = subscription.items.data[0];
     await this.subscriptionRepo.update(existing.id, {
       status: subscription.status as SubscriptionStatus,
       stripePriceId: priceId ?? existing.stripePriceId,
       plan: plan?.type ?? existing.plan,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: new Date(updatedItem.current_period_start * 1000),
+      currentPeriodEnd: new Date(updatedItem.current_period_end * 1000),
       trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,

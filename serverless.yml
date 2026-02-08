@@ -16,6 +16,12 @@ provider:
     JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
     AWS_REGION_CUSTOM: ${self:provider.region}
     S3_BUCKET: ${env:S3_BUCKET, ''}
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ''}
+    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET, ''}
+    STRIPE_PRO_PRICE_ID: ${env:STRIPE_PRO_PRICE_ID, ''}
+    STRIPE_BUSINESS_PRICE_ID: ${env:STRIPE_BUSINESS_PRICE_ID, ''}
+    STRIPE_ENTERPRISE_PRICE_ID: ${env:STRIPE_ENTERPRISE_PRICE_ID, ''}
+    APP_URL: ${env:APP_URL, 'http://localhost:3000'}
 
 plugins:
   - serverless-offline
@@ -181,6 +187,28 @@ functions:
           method: post
           cors: true
 
+      # Subscriptions
+      - http:
+          path: /subscriptions
+          method: get
+          cors: true
+      - http:
+          path: /subscriptions/checkout
+          method: post
+          cors: true
+      - http:
+          path: /subscriptions/portal
+          method: post
+          cors: true
+      - http:
+          path: /subscriptions
+          method: delete
+          cors: true
+      - http:
+          path: /subscriptions/reactivate
+          method: patch
+          cors: true
+
       # Me
       - http:
           path: /me
@@ -197,6 +225,18 @@ functions:
           cors: true
       - http:
           path: /auth/login
+          method: post
+          cors: true
+
+      # Plans (public)
+      - http:
+          path: /plans
+          method: get
+          cors: true
+
+      # Webhooks
+      - http:
+          path: /webhooks/stripe
           method: post
           cors: true
 

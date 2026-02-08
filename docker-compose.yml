@@ -21,6 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    image: jurix-api-dev
     container_name: jurix-api
     restart: unless-stopped
     ports:
@@ -31,27 +32,20 @@ services:
       JWT_SECRET: sua-chave-secreta-com-pelo-menos-32-caracteres
       JWT_EXPIRES_IN: 7d
       AWS_REGION: us-east-1
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
+      STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID:-price_pro_placeholder}
+      STRIPE_BUSINESS_PRICE_ID: ${STRIPE_BUSINESS_PRICE_ID:-price_business_placeholder}
+      STRIPE_ENTERPRISE_PRICE_ID: ${STRIPE_ENTERPRISE_PRICE_ID:-price_enterprise_placeholder}
+      APP_URL: ${APP_URL:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy
+    command: sh -c "npm run setup:dev; npm run dev"
     volumes:
       - ./src:/app/src
       - ./prisma:/app/prisma
       - /app/node_modules
-
-  migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: jurix-migrate
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/jurix
-    depends_on:
-      db:
-        condition: service_healthy
-    command: npx prisma db push
-    profiles:
-      - tools
 
 volumes:
   postgres_data:

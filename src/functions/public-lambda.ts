@@ -1,16 +1,20 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { success, noContent, notFound, error } from '../helpers/http-status';
 import { parseBody } from '../helpers/parse-body';
+import { verifyStripeWebhook } from '../helpers/stripe-webhook';
 import { validate } from '../validations/validate';
 import { loginSchema, uploadDocumentSchema } from '../validations/schemas';
-import { AuthUseCase, ShareLinkUseCase } from '../use-cases/public';
+import { AuthUseCase, ShareLinkUseCase, WebhookUseCase } from '../use-cases/public';
 import {
   LawyerRepository,
   LegalCaseRepository,
   DocumentRepository,
   ShareLinkRepository,
+  SubscriptionRepository,
+  OrganizationRepository,
 } from '../db/repository';
 import { getPrisma } from '../db/prisma';
+import { PLANS } from '../config/constants';
 
 interface RouteParams {
   event: APIGatewayProxyEvent;
@@ -26,8 +30,12 @@ const caseRepo = new LegalCaseRepository(prisma);
 const documentRepo = new DocumentRepository(prisma);
 const shareLinkRepo = new ShareLinkRepository(prisma);
 
+const organizationRepo = new OrganizationRepository(prisma);
+const subscriptionRepo = new SubscriptionRepository(prisma);
+
 const authUseCase = new AuthUseCase(lawyerRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo);
+const webhookUseCase = new WebhookUseCase(subscriptionRepo, organizationRepo);
 
 const routes: Record<string, Record<string, RouteHandler>> = {
   get: {
@@ -35,6 +43,15 @@ const routes: Record<string, Record<string, RouteHandler>> = {
       if (!id) return notFound('Token is required');
       const link = await shareLinkUseCase.getByToken(id);
       return success(link);
+    },
+    plans: async () => {
+      const plans = Object.values(PLANS).map(({ name, type, price, limits }) => ({
+        name,
+        type,
+        price,
+        limits,
+      }));
+      return success(plans);
     },
   },
   post: {
@@ -60,6 +77,34 @@ const routes: Record<string, Record<string, RouteHandler>> = {
       await shareLinkUseCase.uploadDocument(id, body.documentId, input.fileUrl);
       return noContent();
     },
+    'webhooks/stripe': async ({ event }) => {
+      const signature = event.headers['Stripe-Signature'] || event.headers['stripe-signature'];
+      if (!signature || !event.body) {
+        return { statusCode: 400, headers: {}, body: JSON.stringify({ error: 'Missing signature or body' }) };
+      }
+
+      const stripeEvent = verifyStripeWebhook(event.body, signature);
+      const subscription = stripeEvent.data.object as import('stripe').default.Subscription;
+
+      switch (stripeEvent.type) {
+        case 'customer.subscription.created':
+          await webhookUseCase.handleSubscriptionCreated(subscription);
+          break;
+        case 'customer.subscription.updated':
+          await webhookUseCase.handleSubscriptionUpdated(subscription);
+          break;
+        case 'customer.subscription.deleted':
+          await webhookUseCase.handleSubscriptionDeleted(subscription);
+          break;
+        case 'customer.subscription.trial_will_end':
+          await webhookUseCase.handleTrialWillEnd(subscription);
+          break;
+        default:
+          console.log('Unhandled Stripe event:', stripeEvent.type);
+      }
+
+      return success({ received: true });
+    },
   },
 };
 
@@ -81,9 +126,9 @@ export const handler = async (
     const method = event.httpMethod.toLowerCase();
     const { resource, id, subAction } = parseRoute(event.path);
 
-    let routeKey = resource;
-    if (subAction) {
-      routeKey = `${resource}/${subAction}`;
+    let routeKey = subAction ? `${resource}/${subAction}` : resource;
+    if (!routes[method]?.[routeKey] && id && !subAction) {
+      routeKey = `${resource}/${id}`;
     }
 
     const routeHandler = routes[method]?.[routeKey];
@@ -92,7 +137,7 @@ export const handler = async (
       return notFound('Route not found');
     }
 
-    return await routeHandler({ event, id, subAction });
+    return await routeHandler({ event, id: routes[method]?.[`${resource}/${id}`] ? undefined : id, subAction });
   } catch (err) {
     return error(err);
   }
