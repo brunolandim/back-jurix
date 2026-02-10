@@ -51,19 +51,24 @@ export class SubscriptionUseCase {
     };
   }
 
-  async createCheckout(plan: string, context: AuthContext): Promise<{ url: string }> {
+  async createCheckout(plan: string, context: AuthContext): Promise<{ url: string | null; upgraded?: boolean }> {
     if (context.role !== 'owner') {
       throw new ForbiddenError('Only the organization owner can manage subscriptions');
-    }
-
-    const existing = await this.subscriptionRepo.findByOrganizationId(context.organizationId);
-    if (existing && (existing.status === 'active' || existing.status === 'trialing')) {
-      throw new ValidationError('Organization already has an active subscription');
     }
 
     const priceId = getPriceIdByPlan(plan);
     if (!priceId) {
       throw new ValidationError('Invalid plan');
+    }
+
+    const existing = await this.subscriptionRepo.findByOrganizationId(context.organizationId);
+
+    if (existing && (existing.status === 'active' || existing.status === 'trialing')) {
+      if (existing.plan === plan) {
+        throw new ValidationError('Already subscribed to this plan');
+      }
+
+      return this.changePlan(existing, priceId, plan, context.organizationId);
     }
 
     const organization = await this.organizationRepo.findById(context.organizationId);
@@ -103,6 +108,62 @@ export class SubscriptionUseCase {
     }
 
     return { url: session.url };
+  }
+
+  private async changePlan(
+    existing: { id: string; stripeSubscriptionId: string },
+    priceId: string,
+    plan: string,
+    organizationId: string
+  ): Promise<{ url: null; upgraded: boolean }> {
+    const newPlan = PLANS[plan];
+    if (!newPlan) throw new ValidationError('Invalid plan');
+
+    const [lawyerCount, caseCount, documentCount, shareLinkCount] = await Promise.all([
+      this.lawyerRepo.countByOrganization(organizationId),
+      this.caseRepo.countByOrganization(organizationId),
+      this.documentRepo.countByOrganization(organizationId),
+      this.shareLinkRepo.countByOrganization(organizationId),
+    ]);
+
+    const usage = { lawyers: lawyerCount, activeCases: caseCount, documents: documentCount, shareLinks: shareLinkCount };
+    const exceeded: Record<string, { current: number; limit: number }> = {};
+
+    for (const [key, current] of Object.entries(usage)) {
+      const limit = newPlan.limits[key as keyof typeof newPlan.limits];
+      if (limit !== null && current > limit) {
+        exceeded[key] = { current, limit };
+      }
+    }
+
+    if (Object.keys(exceeded).length > 0) {
+      throw new ValidationError('Plan limits exceeded', { code: 'PLAN_LIMITS_EXCEEDED', exceeded, plan: newPlan.name });
+    }
+
+    const stripe = getStripe();
+
+    const stripeSubscription = await stripe.subscriptions.retrieve(existing.stripeSubscriptionId);
+    const itemId = stripeSubscription.items.data[0]?.id;
+
+    if (!itemId) {
+      throw new ValidationError('Subscription has no items');
+    }
+
+    const updated = await stripe.subscriptions.update(existing.stripeSubscriptionId, {
+      items: [{ id: itemId, price: priceId }],
+      proration_behavior: 'create_prorations',
+      metadata: { plan },
+    });
+
+    const updatedItem = updated.items.data[0];
+    await this.subscriptionRepo.update(existing.id, {
+      stripePriceId: priceId,
+      plan,
+      currentPeriodStart: new Date(updatedItem.current_period_start * 1000),
+      currentPeriodEnd: new Date(updatedItem.current_period_end * 1000),
+    });
+
+    return { url: null, upgraded: true };
   }
 
   async createPortal(context: AuthContext): Promise<{ url: string }> {

@@ -9,7 +9,8 @@
     "dev": "sls offline start",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "setup:dev": "tsx scripts/migrate.ts && tsx scripts/seed.ts"
+    "setup:dev": "tsx scripts/migrate.ts && tsx scripts/seed.ts",
+    "start:stripe":"stripe listen --forward-to localhost:8008/dev/webhooks/stripe"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.525.0",

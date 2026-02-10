@@ -2,6 +2,8 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-l
 import { success, created, noContent, notFound, error } from '../helpers/http-status';
 import { authenticate } from '../helpers/auth';
 import { parseBody } from '../helpers/parse-body';
+import { matchRoute } from '../helpers/router';
+import type { Route } from '../helpers/router';
 import { validate } from '../validations/validate';
 import {
   updateOrganizationSchema,
@@ -44,41 +46,6 @@ import {
 import { getPrisma } from '../db/prisma';
 import type { AuthContext } from '../types';
 
-interface RouteParams {
-  event: APIGatewayProxyEvent;
-  context: AuthContext;
-  params: Record<string, string>;
-}
-
-type RouteHandler = (params: RouteParams) => Promise<APIGatewayProxyResult>;
-
-type Route = { method: string; pattern: string; handler: RouteHandler };
-
-function matchRoute(routes: Route[], method: string, path: string): { handler: RouteHandler; params: Record<string, string> } | null {
-  const parts = path.split('/').filter(Boolean);
-
-  for (const route of routes) {
-    if (route.method !== method) continue;
-    const routeParts = route.pattern.split('/').filter(Boolean);
-    if (routeParts.length !== parts.length) continue;
-
-    const params: Record<string, string> = {};
-    let match = true;
-
-    for (let i = 0; i < routeParts.length; i++) {
-      if (routeParts[i].startsWith(':')) {
-        params[routeParts[i].slice(1)] = parts[i];
-      } else if (routeParts[i] !== parts[i]) {
-        match = false;
-        break;
-      }
-    }
-
-    if (match) return { handler: route.handler, params };
-  }
-
-  return null;
-}
 
 const prisma = getPrisma();
 const organizationRepo = new OrganizationRepository(prisma);
@@ -96,11 +63,11 @@ const organizationUseCase = new OrganizationUseCase(organizationRepo, columnRepo
 const lawyerUseCase = new LawyerUseCase(lawyerRepo, planEnforcerUseCase);
 const columnUseCase = new ColumnUseCase(columnRepo, caseRepo);
 const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo, planEnforcerUseCase);
-const documentUseCase = new DocumentUseCase(documentRepo, caseRepo);
+const documentUseCase = new DocumentUseCase(documentRepo, caseRepo, planEnforcerUseCase);
 const notificationUseCase = new NotificationUseCase(notificationRepo, caseRepo);
-const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo);
+const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo, planEnforcerUseCase);
 
-const routes: Route[] = [
+const routes: Route<AuthContext>[] = [
   // Organizations
   { method: 'get', pattern: 'organizations', handler: async ({ context }) => {
     const org = await organizationUseCase.getById(context.organizationId);

@@ -5,12 +5,14 @@ import type {
   ICaseRepository,
 } from '../../db/interfaces';
 import type { ShareableLinkWithDocuments, AuthContext } from '../../types';
+import type { PlanEnforcerUseCase } from '../private/plan-enforcer.usecase';
 
 export class ShareLinkUseCase {
   constructor(
     private shareLinkRepo: IShareLinkRepository,
     private documentRepo: IDocumentRepository,
-    private caseRepo: ICaseRepository
+    private caseRepo: ICaseRepository,
+    private planEnforcer: PlanEnforcerUseCase
   ) {}
 
   private async verifyCaseOwnership(caseId: string, organizationId: string): Promise<void> {
@@ -25,6 +27,7 @@ export class ShareLinkUseCase {
     documentIds: string[],
     context: AuthContext
   ): Promise<ShareableLinkWithDocuments> {
+    await this.planEnforcer.enforce(context.organizationId, 'shareLinks');
     await this.verifyCaseOwnership(caseId, context.organizationId);
 
     const documents = await this.documentRepo.findByIds(documentIds);

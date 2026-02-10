@@ -10,11 +10,13 @@ import type {
   AuthContext,
 } from '../../types';
 import type { RejectionReason } from '../../enum';
+import type { PlanEnforcerUseCase } from './plan-enforcer.usecase';
 
 export class DocumentUseCase {
   constructor(
     private documentRepo: IDocumentRepository,
-    private caseRepo: ICaseRepository
+    private caseRepo: ICaseRepository,
+    private planEnforcer: PlanEnforcerUseCase
   ) {}
 
   private async verifyCaseOwnership(caseId: string, organizationId: string): Promise<void> {
@@ -34,6 +36,7 @@ export class DocumentUseCase {
     input: Omit<CreateDocumentRequestInput, 'caseId'>,
     context: AuthContext
   ): Promise<DocumentRequest> {
+    await this.planEnforcer.enforce(context.organizationId, 'documents');
     await this.verifyCaseOwnership(caseId, context.organizationId);
 
     return this.documentRepo.create({
