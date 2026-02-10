@@ -9,6 +9,14 @@ provider:
   stage: ${opt:stage, 'dev'}
   memorySize: 512
   timeout: 30
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource: arn:aws:s3:::${env:S3_BUCKET, 'jurix-uploads'}/*
   environment:
     NODE_ENV: ${env:NODE_ENV, 'development'}
     DATABASE_URL: ${env:DATABASE_URL}
@@ -16,6 +24,8 @@ provider:
     JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
     AWS_REGION_CUSTOM: ${self:provider.region}
     S3_BUCKET: ${env:S3_BUCKET, ''}
+    S3_ENDPOINT: ${env:S3_ENDPOINT, ''}
+    S3_PUBLIC_URL: ${env:S3_PUBLIC_URL, ''}
     STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ''}
     STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET, ''}
     STRIPE_PRO_PRICE_ID: ${env:STRIPE_PRO_PRICE_ID, ''}
@@ -214,6 +224,20 @@ functions:
           path: /me
           method: get
           cors: true
+      - http:
+          path: /me
+          method: put
+          cors: true
+
+      # Uploads
+      - http:
+          path: /uploads/presigned-url
+          method: post
+          cors: true
+      - http:
+          path: /uploads
+          method: post
+          cors: true
 
   public:
     handler: src/functions/public-lambda.handler
@@ -244,6 +268,10 @@ functions:
       - http:
           path: /share-links/{id}
           method: get
+          cors: true
+      - http:
+          path: /share-links/{id}/upload-url
+          method: post
           cors: true
       - http:
           path: /share-links/{id}/upload

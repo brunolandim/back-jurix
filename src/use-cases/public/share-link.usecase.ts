@@ -27,7 +27,6 @@ export class ShareLinkUseCase {
     documentIds: string[],
     context: AuthContext
   ): Promise<ShareableLinkWithDocuments> {
-    await this.planEnforcer.enforce(context.organizationId, 'shareLinks');
     await this.verifyCaseOwnership(caseId, context.organizationId);
 
     const documents = await this.documentRepo.findByIds(documentIds);
@@ -41,6 +40,16 @@ export class ShareLinkUseCase {
         throw new ValidationError('All documents must belong to the same case');
       }
     }
+
+    const existingLinks = await this.shareLinkRepo.findByCase(caseId);
+    const activeLink = existingLinks.find((link) => !link.isExpired);
+
+    if (activeLink) {
+      const linkDocuments = await this.shareLinkRepo.getDocuments(activeLink.id);
+      return { ...activeLink, documents: linkDocuments };
+    }
+
+    await this.planEnforcer.enforce(context.organizationId, 'shareLinks');
 
     return this.shareLinkRepo.create({
       caseId,

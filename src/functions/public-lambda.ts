@@ -5,9 +5,9 @@ import { verifyStripeWebhook } from '../helpers/stripe-webhook';
 import { matchRoute } from '../helpers/router';
 import type { Route } from '../helpers/router';
 import { validate } from '../validations/validate';
-import { loginSchema, uploadDocumentSchema } from '../validations/schemas';
+import { loginSchema, uploadDocumentSchema, publicPresignedUrlSchema } from '../validations/schemas';
 import { AuthUseCase, ShareLinkUseCase, WebhookUseCase } from '../use-cases/public';
-import { PlanEnforcerUseCase } from '../use-cases/private';
+import { PlanEnforcerUseCase, UploadUseCase } from '../use-cases/private';
 import {
   LawyerRepository,
   LegalCaseRepository,
@@ -32,6 +32,7 @@ const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo
 const authUseCase = new AuthUseCase(lawyerRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo, planEnforcerUseCase);
 const webhookUseCase = new WebhookUseCase(subscriptionRepo, organizationRepo);
+const uploadUseCase = new UploadUseCase(shareLinkRepo, documentRepo);
 
 const routes: Route[] = [
   // Auth
@@ -53,13 +54,24 @@ const routes: Route[] = [
     const link = await shareLinkUseCase.getByToken(params.token);
     return success(link);
   }},
+  { method: 'post', pattern: 'share-links/:token/upload-url', handler: async ({ event, params }) => {
+    const body = parseBody(event);
+    const input = validate(publicPresignedUrlSchema, body);
+    const result = await uploadUseCase.generatePublicPresignedUrl(
+      params.token,
+      input.documentId,
+      input.contentType,
+      input.fileName
+    );
+    return success(result);
+  }},
   { method: 'post', pattern: 'share-links/:token/upload', handler: async ({ event, params }) => {
     const body = parseBody(event) as { documentId?: string; fileUrl?: string };
     if (!body?.documentId) {
       return notFound('Document ID is required');
     }
     const input = validate(uploadDocumentSchema, body);
-    await shareLinkUseCase.uploadDocument(params.token, body.documentId, input.fileUrl);
+    await uploadUseCase.confirmPublicUpload(params.token, body.documentId, input.fileUrl);
     return noContent();
   }},
 

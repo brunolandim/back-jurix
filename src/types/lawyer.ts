@@ -47,7 +47,7 @@ export interface UpdateLawyerInput {
   email?: string;
   password?: string;
   phone?: string;
-  photo?: string;
+  photo?: string | null;
   specialty?: string;
   role?: LawyerRole;
   active?: boolean;

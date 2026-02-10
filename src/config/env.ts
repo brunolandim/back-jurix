@@ -19,6 +19,8 @@ const envSchema = z.object({
   // AWS
   AWS_REGION: z.string().default('us-east-1'),
   S3_BUCKET: z.string().optional(),
+  S3_ENDPOINT: z.string().optional(),
+  S3_PUBLIC_URL: z.string().optional(),
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1),

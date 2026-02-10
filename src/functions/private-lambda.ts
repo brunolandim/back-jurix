@@ -9,6 +9,7 @@ import {
   updateOrganizationSchema,
   createLawyerSchema,
   updateLawyerSchema,
+  updateProfileSchema,
   createColumnSchema,
   updateColumnSchema,
   createCaseSchema,
@@ -21,6 +22,8 @@ import {
   createNotificationSchema,
   createShareLinkSchema,
   createCheckoutSchema,
+  presignedUrlSchema,
+  uploadFileSchema,
 } from '../validations/schemas';
 import {
   OrganizationUseCase,
@@ -31,6 +34,7 @@ import {
   NotificationUseCase,
   PlanEnforcerUseCase,
   SubscriptionUseCase,
+  UploadUseCase,
 } from '../use-cases/private';
 import { ShareLinkUseCase } from '../use-cases/public';
 import {
@@ -45,6 +49,7 @@ import {
 } from '../db/repository';
 import { getPrisma } from '../db/prisma';
 import type { AuthContext } from '../types';
+import { DEFAULT_PASSWORD } from '../config/constants';
 
 
 const prisma = getPrisma();
@@ -66,6 +71,7 @@ const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo, 
 const documentUseCase = new DocumentUseCase(documentRepo, caseRepo, planEnforcerUseCase);
 const notificationUseCase = new NotificationUseCase(notificationRepo, caseRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo, planEnforcerUseCase);
+const uploadUseCase = new UploadUseCase();
 
 const routes: Route<AuthContext>[] = [
   // Organizations
@@ -92,7 +98,11 @@ const routes: Route<AuthContext>[] = [
   { method: 'post', pattern: 'lawyers', handler: async ({ event, context }) => {
     const body = parseBody(event);
     const input = validate(createLawyerSchema, body);
-    const lawyer = await lawyerUseCase.create({ ...input, organizationId: context.organizationId }, context);
+    const lawyer = await lawyerUseCase.create({
+      ...input,
+      password: input.password || DEFAULT_PASSWORD,
+      organizationId: context.organizationId,
+    }, context);
     return created(lawyer);
   }},
   { method: 'put', pattern: 'lawyers/:id', handler: async ({ event, context, params }) => {
@@ -268,6 +278,26 @@ const routes: Route<AuthContext>[] = [
   { method: 'get', pattern: 'me', handler: async ({ context }) => {
     const lawyer = await lawyerUseCase.getById(context.lawyerId, context.organizationId);
     return success(lawyer);
+  }},
+  { method: 'put', pattern: 'me', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(updateProfileSchema, body);
+    const lawyer = await lawyerUseCase.update(context.lawyerId, input, context);
+    return success(lawyer);
+  }},
+
+  // Uploads
+  { method: 'post', pattern: 'uploads/presigned-url', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(presignedUrlSchema, body);
+    const result = await uploadUseCase.generatePresignedUrl(input.folder, input.contentType, input.fileName, context);
+    return success(result);
+  }},
+  { method: 'post', pattern: 'uploads', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(uploadFileSchema, body);
+    const result = await uploadUseCase.uploadFile(input.folder, input.contentType, input.fileName, input.data, context);
+    return created(result);
   }},
 ];
 

@@ -9,7 +9,8 @@ export const createLawyerSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z
     .string()
-    .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`),
+    .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+    .optional(),
   phone: z.string().optional(),
   oab: z.string().min(3, 'Invalid OAB number'),
   specialty: z.string().optional(),
@@ -24,10 +25,23 @@ export const updateLawyerSchema = z.object({
     .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
     .optional(),
   phone: z.string().optional(),
+  photo: z.string().url().optional().nullable(),
   specialty: z.string().optional(),
   role: lawyerRoleEnum.optional(),
   active: z.boolean().optional(),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  phone: z.string().optional(),
+  photo: z.string().url().optional().nullable(),
+  specialty: z.string().optional(),
+  password: z
+    .string()
+    .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+    .optional(),
+});
+
 export type CreateLawyerSchemaInput = z.infer<typeof createLawyerSchema>;
 export type UpdateLawyerSchemaInput = z.infer<typeof updateLawyerSchema>;
+export type UpdateProfileSchemaInput = z.infer<typeof updateProfileSchema>;

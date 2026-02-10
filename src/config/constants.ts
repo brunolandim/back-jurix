@@ -12,6 +12,8 @@ export const TOKEN_LENGTH = 64;
 
 export const PASSWORD_MIN_LENGTH = 8;
 
+export const DEFAULT_PASSWORD = 'admin123';
+
 export const UPLOAD_MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 export const ALLOWED_FILE_TYPES = [
