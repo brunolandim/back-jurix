@@ -32,7 +32,7 @@ const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo
 const authUseCase = new AuthUseCase(lawyerRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo, planEnforcerUseCase);
 const webhookUseCase = new WebhookUseCase(subscriptionRepo, organizationRepo);
-const uploadUseCase = new UploadUseCase(shareLinkRepo, documentRepo);
+const uploadUseCase = new UploadUseCase(shareLinkRepo, documentRepo, caseRepo);
 
 const routes: Route[] = [
   // Auth

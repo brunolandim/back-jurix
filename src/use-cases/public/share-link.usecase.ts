@@ -46,7 +46,14 @@ export class ShareLinkUseCase {
 
     if (activeLink) {
       const linkDocuments = await this.shareLinkRepo.getDocuments(activeLink.id);
-      return { ...activeLink, documents: linkDocuments };
+      const linkDocIds = new Set(linkDocuments.map((d) => d.id));
+      const sameDocuments = documentIds.length === linkDocIds.size && documentIds.every((id) => linkDocIds.has(id));
+
+      if (sameDocuments) {
+        return { ...activeLink, documents: linkDocuments };
+      }
+
+      await this.shareLinkRepo.expire(activeLink.id);
     }
 
     await this.planEnforcer.enforce(context.organizationId, 'shareLinks');

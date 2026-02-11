@@ -1,13 +1,14 @@
 import { randomUUID } from 'crypto';
 import { generatePresignedUploadUrl, uploadToS3 } from '../../utils/s3';
 import type { AuthContext } from '../../types';
-import type { IShareLinkRepository, IDocumentRepository } from '../../db/interfaces';
+import type { IShareLinkRepository, IDocumentRepository, ICaseRepository } from '../../db/interfaces';
 import { NotFoundError, ForbiddenError } from '../../errors';
 
 export class UploadUseCase {
   constructor(
     private shareLinkRepo?: IShareLinkRepository,
-    private documentRepo?: IDocumentRepository
+    private documentRepo?: IDocumentRepository,
+    private caseRepo?: ICaseRepository
   ) {}
 
   async generatePresignedUrl(
@@ -26,7 +27,7 @@ export class UploadUseCase {
     contentType: string,
     fileName: string
   ): Promise<{ uploadUrl: string; fileUrl: string; documentId: string }> {
-    if (!this.shareLinkRepo || !this.documentRepo) {
+    if (!this.shareLinkRepo || !this.documentRepo || !this.caseRepo) {
       throw new Error('Repositories not initialized');
     }
 
@@ -50,7 +51,12 @@ export class UploadUseCase {
       throw new NotFoundError('Document', documentId);
     }
 
-    const key = `documents/${link.caseId}/${randomUUID()}-${fileName}`;
+    const legalCase = await this.caseRepo.findById(link.caseId);
+    if (!legalCase) {
+      throw new NotFoundError('Case', link.caseId);
+    }
+
+    const key = `${legalCase.organizationId}/documents/${randomUUID()}-${fileName}`;
     const result = await generatePresignedUploadUrl(key, contentType);
     
     return { ...result, documentId };

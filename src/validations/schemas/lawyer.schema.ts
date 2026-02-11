@@ -29,6 +29,7 @@ export const updateLawyerSchema = z.object({
   specialty: z.string().optional(),
   role: lawyerRoleEnum.optional(),
   active: z.boolean().optional(),
+  avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
 });
 
 export const updateProfileSchema = z.object({
@@ -40,6 +41,7 @@ export const updateProfileSchema = z.object({
     .string()
     .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
     .optional(),
+  avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
 });
 
 export type CreateLawyerSchemaInput = z.infer<typeof createLawyerSchema>;

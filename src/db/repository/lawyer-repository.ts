@@ -69,6 +69,7 @@ export class LawyerRepository implements ILawyerRepository {
     if (input.specialty !== undefined) updateData.specialty = input.specialty;
     if (input.role !== undefined) updateData.role = input.role;
     if (input.active !== undefined) updateData.active = input.active;
+    if (input.avatarColor !== undefined) updateData.avatarColor = input.avatarColor;
 
     if (input.password) {
       updateData.passwordHash = await hashPassword(input.password);

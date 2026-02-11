@@ -88,6 +88,7 @@ model Lawyer {
   specialty      String?
   role           LawyerRole @default(lawyer)
   active         Boolean    @default(true)
+  avatarColor    String?    @map("avatar_color")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 

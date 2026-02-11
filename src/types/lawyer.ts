@@ -12,6 +12,7 @@ export interface Lawyer {
   specialty: string | null;
   role: LawyerRole;
   active: boolean;
+  avatarColor: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,7 @@ export interface LawyerPublic {
   specialty: string | null;
   role: LawyerRole;
   active: boolean;
+  avatarColor: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +53,7 @@ export interface UpdateLawyerInput {
   specialty?: string;
   role?: LawyerRole;
   active?: boolean;
+  avatarColor?: string | null;
 }
 
 export function toPublicLawyer(lawyer: Lawyer): LawyerPublic {
