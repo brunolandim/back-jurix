@@ -28,7 +28,7 @@ const shareLinkRepo = new ShareLinkRepository(prisma);
 const organizationRepo = new OrganizationRepository(prisma);
 const subscriptionRepo = new SubscriptionRepository(prisma);
 
-const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo, caseRepo, documentRepo, shareLinkRepo);
+const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo, caseRepo, shareLinkRepo);
 const authUseCase = new AuthUseCase(lawyerRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo, planEnforcerUseCase);
 const webhookUseCase = new WebhookUseCase(subscriptionRepo, organizationRepo);
@@ -77,11 +77,12 @@ const routes: Route[] = [
 
   // Plans
   { method: 'get', pattern: 'plans', handler: async () => {
-    const plans = Object.values(PLANS).map(({ name, type, price, limits }) => ({
+    const plans = Object.values(PLANS).map(({ name, type, price, limits, features }) => ({
       name,
       type,
       price,
       limits,
+      features,
     }));
     return success(plans);
   }},

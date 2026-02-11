@@ -1,0 +1,15 @@
+import type { ScheduledEvent, Context } from 'aws-lambda';
+import { getPrisma } from '../db/prisma';
+import { NotificationRepository } from '../db/repository/notification-repository';
+import { SubscriptionRepository } from '../db/repository/subscription-repository';
+import { NotificationSenderUseCase } from '../use-cases/worker/notification-sender.usecase';
+
+export const handler = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
+  const prisma = getPrisma();
+  const notificationRepo = new NotificationRepository(prisma);
+  const subscriptionRepo = new SubscriptionRepository(prisma);
+  const sender = new NotificationSenderUseCase(notificationRepo, subscriptionRepo);
+
+  const result = await sender.execute();
+  console.log('[notification-worker] Result:', JSON.stringify(result));
+};

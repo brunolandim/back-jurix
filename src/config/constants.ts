@@ -34,11 +34,17 @@ export interface PlanLimits {
   shareLinks: number | null;
 }
 
+export interface PlanFeatures {
+  emailNotifications: boolean;
+  whatsappNotifications: boolean;
+}
+
 export interface PlanDefinition {
   name: string;
   type: string;
   price: number;
   limits: PlanLimits;
+  features: PlanFeatures;
 }
 
 export const PLANS: Record<string, PlanDefinition> = {
@@ -48,9 +54,13 @@ export const PLANS: Record<string, PlanDefinition> = {
     price: 9700,
     limits: {
       lawyers: 3,
-      activeCases: 30,
-      documents: 100,
-      shareLinks: 10,
+      activeCases: 50,
+      shareLinks: 50,
+      documents: null,
+    },
+    features: {
+      emailNotifications: true,
+      whatsappNotifications: false,
     },
   },
   business: {
@@ -59,9 +69,13 @@ export const PLANS: Record<string, PlanDefinition> = {
     price: 19700,
     limits: {
       lawyers: 10,
-      activeCases: 200,
-      documents: 500,
-      shareLinks: 50,
+      activeCases: 300,
+      shareLinks: 300,
+      documents: null,
+    },
+    features: {
+      emailNotifications: true,
+      whatsappNotifications: true,
     },
   },
   enterprise: {
@@ -71,8 +85,12 @@ export const PLANS: Record<string, PlanDefinition> = {
     limits: {
       lawyers: null,
       activeCases: null,
-      documents: null,
       shareLinks: null,
+      documents: null,
+    },
+    features: {
+      emailNotifications: true,
+      whatsappNotifications: true,
     },
   },
 };

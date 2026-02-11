@@ -10,7 +10,7 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "setup:dev": "tsx scripts/migrate.ts && tsx scripts/seed.ts",
-    "start:stripe":"stripe listen --forward-to localhost:8008/dev/webhooks/stripe"
+    "start:stripe": "stripe listen --forward-to localhost:8008/dev/webhooks/stripe"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.525.0",
@@ -24,6 +24,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@aws-sdk/client-ses": "^3.967.0",
     "@types/aws-lambda": "^8.10.136",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",

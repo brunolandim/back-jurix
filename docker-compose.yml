@@ -79,6 +79,8 @@ services:
       STRIPE_BUSINESS_PRICE_ID: ${STRIPE_BUSINESS_PRICE_ID:-price_business_placeholder}
       STRIPE_ENTERPRISE_PRICE_ID: ${STRIPE_ENTERPRISE_PRICE_ID:-price_enterprise_placeholder}
       APP_URL: ${APP_URL:-http://localhost:3000}
+      SES_FROM_EMAIL: ${SES_FROM_EMAIL:-noreply@example.com}
+      SES_REGION: ${SES_REGION:-us-east-1}
     depends_on:
       db:
         condition: service_healthy

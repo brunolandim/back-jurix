@@ -1,5 +1,5 @@
 import type { PrismaClient } from '../prisma';
-import type { INotificationRepository } from '../interfaces/inotification-repository';
+import type { INotificationRepository, PendingNotification } from '../interfaces/inotification-repository';
 import type {
   CaseNotification,
   CreateNotificationInput,
@@ -30,15 +30,37 @@ export class NotificationRepository implements INotificationRepository {
     });
   }
 
-  async findPendingToSend(): Promise<CaseNotification[]> {
-    const now = new Date();
+  async findPendingToSend(): Promise<PendingNotification[]> {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 59, 999);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     return this.prisma.caseNotification.findMany({
       where: {
         isSent: false,
-        date: { lte: now },
+        date: { gte: today, lte: tomorrow },
+      },
+      include: {
+        lawyer: {
+          select: {
+            name: true,
+            email: true,
+            phone: true,
+            organizationId: true,
+          },
+        },
+        case: {
+          select: {
+            title: true,
+            number: true,
+          },
+        },
       },
       orderBy: { date: 'asc' },
-    });
+    }) as unknown as PendingNotification[];
   }
 
   async create(input: CreateNotificationInput): Promise<CaseNotification> {

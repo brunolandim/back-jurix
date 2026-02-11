@@ -2,21 +2,19 @@ import type {
   ISubscriptionRepository,
   ILawyerRepository,
   ICaseRepository,
-  IDocumentRepository,
   IShareLinkRepository,
 } from '../../db/interfaces';
 import { PLANS } from '../../config/constants';
 import { PlanLimitError, SubscriptionRequiredError, ReadOnlyModeError } from '../../errors';
 import type { Subscription } from '../../types';
 
-type ResourceType = 'lawyers' | 'activeCases' | 'documents' | 'shareLinks';
+type ResourceType = 'lawyers' | 'activeCases' | 'shareLinks';
 
 export class PlanEnforcerUseCase {
   constructor(
     private subscriptionRepo: ISubscriptionRepository,
     private lawyerRepo: ILawyerRepository,
     private caseRepo: ICaseRepository,
-    private documentRepo: IDocumentRepository,
     private shareLinkRepo: IShareLinkRepository
   ) {}
 
@@ -62,8 +60,6 @@ export class PlanEnforcerUseCase {
         return this.lawyerRepo.countByOrganization(organizationId);
       case 'activeCases':
         return this.caseRepo.countByOrganization(organizationId);
-      case 'documents':
-        return this.documentRepo.countByOrganization(organizationId);
       case 'shareLinks':
         return this.shareLinkRepo.countByOrganization(organizationId);
     }

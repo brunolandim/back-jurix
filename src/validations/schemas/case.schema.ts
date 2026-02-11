@@ -8,6 +8,7 @@ export const createCaseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   description: z.string().optional(),
   client: z.string().min(1, 'Client name is required').max(255),
+  clientPhone: z.string().optional(),
   priority: priorityEnum.optional(),
   assignedTo: z.string().uuid('Invalid lawyer ID').optional(),
 });
@@ -18,6 +19,7 @@ export const updateCaseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255).optional(),
   description: z.string().optional(),
   client: z.string().min(1, 'Client name is required').max(255).optional(),
+  clientPhone: z.string().optional(),
   priority: priorityEnum.optional(),
   assignedTo: z.string().uuid('Invalid lawyer ID').nullable().optional(),
 });

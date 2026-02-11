@@ -62,7 +62,7 @@ const notificationRepo = new NotificationRepository(prisma);
 const shareLinkRepo = new ShareLinkRepository(prisma);
 const subscriptionRepo = new SubscriptionRepository(prisma);
 
-const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo, caseRepo, documentRepo, shareLinkRepo);
+const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo, caseRepo, shareLinkRepo);
 const subscriptionUseCase = new SubscriptionUseCase(subscriptionRepo, organizationRepo, lawyerRepo, caseRepo, documentRepo, shareLinkRepo);
 const organizationUseCase = new OrganizationUseCase(organizationRepo, columnRepo);
 const lawyerUseCase = new LawyerUseCase(lawyerRepo, planEnforcerUseCase);

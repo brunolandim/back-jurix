@@ -130,6 +130,7 @@ model LegalCase {
   title          String
   description    String?
   client         String
+  clientPhone    String?  @map("client_phone")
   priority       Priority @default(medium)
   order          Float
   assignedTo     String?  @map("assigned_to")

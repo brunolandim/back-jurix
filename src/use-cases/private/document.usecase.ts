@@ -36,7 +36,6 @@ export class DocumentUseCase {
     input: Omit<CreateDocumentRequestInput, 'caseId'>,
     context: AuthContext
   ): Promise<DocumentRequest> {
-    await this.planEnforcer.enforce(context.organizationId, 'documents');
     await this.verifyCaseOwnership(caseId, context.organizationId);
 
     return this.documentRepo.create({

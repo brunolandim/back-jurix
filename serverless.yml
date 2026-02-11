@@ -17,6 +17,11 @@ provider:
             - s3:PutObject
             - s3:GetObject
           Resource: arn:aws:s3:::${env:S3_BUCKET, 'jurix-uploads'}/*
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: '*'
   environment:
     NODE_ENV: ${env:NODE_ENV, 'development'}
     DATABASE_URL: ${env:DATABASE_URL}
@@ -32,6 +37,10 @@ provider:
     STRIPE_BUSINESS_PRICE_ID: ${env:STRIPE_BUSINESS_PRICE_ID, ''}
     STRIPE_ENTERPRISE_PRICE_ID: ${env:STRIPE_ENTERPRISE_PRICE_ID, ''}
     APP_URL: ${env:APP_URL, 'http://localhost:3000'}
+    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, ''}
+    SES_REGION: ${env:SES_REGION, ''}
+    WHATSAPP_PHONE_NUMBER_ID: ${env:WHATSAPP_PHONE_NUMBER_ID, ''}
+    WHATSAPP_ACCESS_TOKEN: ${env:WHATSAPP_ACCESS_TOKEN, ''}
 
 plugins:
   - serverless-offline
@@ -277,6 +286,15 @@ functions:
           path: /share-links/{id}/upload
           method: post
           cors: true
+
+  notification-worker:
+    handler: src/functions/notification-worker.handler
+    timeout: 60
+    memorySize: 256
+    events:
+      - schedule:
+          rate: rate(5 minutes)
+          enabled: true
 
 package:
   individually: true

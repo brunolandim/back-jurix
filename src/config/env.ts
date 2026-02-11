@@ -30,6 +30,14 @@ const envSchema = z.object({
   STRIPE_ENTERPRISE_PRICE_ID: z.string().min(1),
   APP_URL: z.string().url().default('http://localhost:3000'),
 
+  // SES
+  SES_FROM_EMAIL: z.string().email().optional(),
+  SES_REGION: z.string().optional(),
+
+  // WhatsApp (Meta Cloud API)
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+
   // App
   CORS_ORIGINS: z.string().default('*'),
 });
