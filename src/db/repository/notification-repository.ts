@@ -127,6 +127,17 @@ export class NotificationRepository implements INotificationRepository {
     });
   }
 
+  async reassignPending(caseId: string, newLawyerId: string): Promise<number> {
+    const result = await this.prisma.caseNotification.updateMany({
+      where: {
+        caseId,
+        isSent: false,
+      },
+      data: { lawyerId: newLawyerId },
+    });
+    return result.count;
+  }
+
   async delete(id: string): Promise<boolean> {
     try {
       await this.prisma.caseNotification.delete({ where: { id } });

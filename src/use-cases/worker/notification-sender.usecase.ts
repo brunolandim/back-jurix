@@ -1,9 +1,5 @@
 import type { INotificationRepository } from '../../db/interfaces/inotification-repository';
-import type { ISubscriptionRepository } from '../../db/interfaces/isubscription-repository';
-import type { Subscription } from '../../types';
-import { PLANS } from '../../config/constants';
 import { sendNotificationEmail } from '../../services/email-service';
-import { sendWhatsAppNotification } from '../../services/whatsapp-service';
 
 export interface ProcessResult {
   total: number;
@@ -15,7 +11,6 @@ export interface ProcessResult {
 export class NotificationSenderUseCase {
   constructor(
     private notificationRepo: INotificationRepository,
-    private subscriptionRepo: ISubscriptionRepository
   ) {}
 
   async execute(): Promise<ProcessResult> {
@@ -28,8 +23,6 @@ export class NotificationSenderUseCase {
       return result;
     }
 
-    const subscriptionCache = new Map<string, Subscription | null>();
-
     for (const notification of notifications) {
       try {
         if (!notification.lawyer) {
@@ -39,27 +32,7 @@ export class NotificationSenderUseCase {
           continue;
         }
 
-        const orgId = notification.lawyer.organizationId;
-
-        if (!subscriptionCache.has(orgId)) {
-          subscriptionCache.set(orgId, await this.subscriptionRepo.findByOrganizationId(orgId));
-        }
-        const subscription = subscriptionCache.get(orgId) ?? null;
-        const planDef = subscription?.plan ? PLANS[subscription.plan] : null;
-
         await sendNotificationEmail(notification);
-
-        if (
-          planDef?.features.whatsappNotifications &&
-          notification.lawyer.phone
-        ) {
-          try {
-            await sendWhatsAppNotification(notification);
-          } catch (whatsappError) {
-            const errMsg = whatsappError instanceof Error ? whatsappError.message : String(whatsappError);
-            console.error(`[notification-sender] WhatsApp failed for ${notification.id}: ${errMsg}`);
-          }
-        }
 
         await this.notificationRepo.markAsSent(notification.id);
         result.sent++;

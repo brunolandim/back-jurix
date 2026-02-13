@@ -31,5 +31,6 @@ export interface INotificationRepository {
   markAsRead(id: string): Promise<CaseNotification | null>;
   markAllAsRead(lawyerId: string): Promise<number>;
   markAsSent(id: string): Promise<CaseNotification | null>;
+  reassignPending(caseId: string, newLawyerId: string): Promise<number>;
   delete(id: string): Promise<boolean>;
 }

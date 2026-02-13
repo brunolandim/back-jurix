@@ -9,6 +9,7 @@ export interface LegalCase {
   title: string;
   description: string | null;
   client: string;
+  clientPhone: string | null;
   priority: Priority;
   order: number;
   assignedTo: string | null;
@@ -28,6 +29,7 @@ export interface CreateLegalCaseInput {
   title: string;
   description?: string;
   client: string;
+  clientPhone?: string;
   priority?: Priority;
   order: number;
   assignedTo?: string;
@@ -40,6 +42,7 @@ export interface UpdateLegalCaseInput {
   title?: string;
   description?: string;
   client?: string;
+  clientPhone?: string;
   priority?: Priority;
   order?: number;
   assignedTo?: string | null;

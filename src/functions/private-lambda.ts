@@ -67,7 +67,7 @@ const subscriptionUseCase = new SubscriptionUseCase(subscriptionRepo, organizati
 const organizationUseCase = new OrganizationUseCase(organizationRepo, columnRepo);
 const lawyerUseCase = new LawyerUseCase(lawyerRepo, planEnforcerUseCase);
 const columnUseCase = new ColumnUseCase(columnRepo, caseRepo);
-const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo, planEnforcerUseCase);
+const legalCaseUseCase = new LegalCaseUseCase(caseRepo, columnRepo, lawyerRepo, planEnforcerUseCase, notificationRepo);
 const documentUseCase = new DocumentUseCase(documentRepo, caseRepo, planEnforcerUseCase);
 const notificationUseCase = new NotificationUseCase(notificationRepo, caseRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo, planEnforcerUseCase);
@@ -276,8 +276,11 @@ const routes: Route<AuthContext>[] = [
 
   // Me
   { method: 'get', pattern: 'me', handler: async ({ context }) => {
-    const lawyer = await lawyerUseCase.getById(context.lawyerId, context.organizationId);
-    return success(lawyer);
+    const [lawyer, org] = await Promise.all([
+      lawyerUseCase.getById(context.lawyerId, context.organizationId),
+      organizationUseCase.getById(context.organizationId),
+    ]);
+    return success({ ...lawyer, organizationName: org.name });
   }},
   { method: 'put', pattern: 'me', handler: async ({ event, context }) => {
     const body = parseBody(event);

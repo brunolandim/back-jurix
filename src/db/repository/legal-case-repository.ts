@@ -93,6 +93,7 @@ export class LegalCaseRepository implements ICaseRepository {
         title: input.title,
         description: input.description ?? null,
         client: input.client,
+        clientPhone: input.clientPhone ?? null,
         priority: input.priority ?? 'medium',
         order: input.order,
         assignedTo: input.assignedTo ?? null,
