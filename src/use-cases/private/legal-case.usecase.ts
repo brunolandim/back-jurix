@@ -3,6 +3,7 @@ import type {
   ICaseRepository,
   IColumnRepository,
   ILawyerRepository,
+  INotificationRepository,
 } from '../../db/interfaces';
 import type {
   LegalCase,
@@ -20,7 +21,8 @@ export class LegalCaseUseCase {
     private legalCaseRepo: ICaseRepository,
     private columnRepo: IColumnRepository,
     private lawyerRepo: ILawyerRepository,
-    private planEnforcer: PlanEnforcerUseCase
+    private planEnforcer: PlanEnforcerUseCase,
+    private notificationRepo: INotificationRepository
   ) {}
 
   async list(organizationId: string): Promise<LegalCase[]> {
@@ -102,6 +104,11 @@ export class LegalCaseUseCase {
     }
 
     const updated = await this.legalCaseRepo.update(id, input);
+
+    if (input.assignedTo && input.assignedTo !== legalCase.assignedTo) {
+      await this.notificationRepo.reassignPending(id, input.assignedTo);
+    }
+
     return updated!;
   }
 
@@ -144,6 +151,11 @@ export class LegalCaseUseCase {
     }
 
     const updated = await this.legalCaseRepo.update(id, { assignedTo });
+
+    if (assignedTo) {
+      await this.notificationRepo.reassignPending(id, assignedTo);
+    }
+
     return updated!;
   }
 

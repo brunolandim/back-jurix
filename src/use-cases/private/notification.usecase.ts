@@ -31,7 +31,7 @@ export class NotificationUseCase {
 
     return this.notificationRepo.create({
       caseId,
-      lawyerId: input.lawyerId,
+      lawyerId: legalCase.assignedTo ?? context.lawyerId,
       type: input.type,
       message: input.message,
       date: input.date,

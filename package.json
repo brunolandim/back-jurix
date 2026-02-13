@@ -10,7 +10,8 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "setup:dev": "tsx scripts/migrate.ts && tsx scripts/seed.ts",
-    "start:stripe": "stripe listen --forward-to localhost:8008/dev/webhooks/stripe"
+    "start:stripe": "stripe listen --forward-to localhost:8008/dev/webhooks/stripe",
+    "worker": "docker exec jurix-api npx tsx scripts/run-worker.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.525.0",
@@ -19,6 +20,7 @@
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^8.0.1",
     "stripe": "^20.3.1",
     "uuid": "^9.0.1",
     "zod": "^3.22.4"
@@ -29,6 +31,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.11.24",
+    "@types/nodemailer": "^7.0.9",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",

@@ -36,7 +36,6 @@ export interface PlanLimits {
 
 export interface PlanFeatures {
   emailNotifications: boolean;
-  whatsappNotifications: boolean;
 }
 
 export interface PlanDefinition {
@@ -60,7 +59,6 @@ export const PLANS: Record<string, PlanDefinition> = {
     },
     features: {
       emailNotifications: true,
-      whatsappNotifications: false,
     },
   },
   business: {
@@ -75,7 +73,6 @@ export const PLANS: Record<string, PlanDefinition> = {
     },
     features: {
       emailNotifications: true,
-      whatsappNotifications: true,
     },
   },
   enterprise: {
@@ -90,7 +87,6 @@ export const PLANS: Record<string, PlanDefinition> = {
     },
     features: {
       emailNotifications: true,
-      whatsappNotifications: true,
     },
   },
 };

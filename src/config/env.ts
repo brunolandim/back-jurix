@@ -34,6 +34,10 @@ const envSchema = z.object({
   SES_FROM_EMAIL: z.string().email().optional(),
   SES_REGION: z.string().optional(),
 
+  // SMTP (local dev with Mailpit)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+
   // WhatsApp (Meta Cloud API)
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   WHATSAPP_ACCESS_TOKEN: z.string().optional(),

@@ -1,4 +1,5 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import nodemailer from 'nodemailer';
 import type { NotificationType } from '../enum';
 import type { PendingNotification } from '../db/interfaces/inotification-repository';
 import { getEnv } from '../config/env';
@@ -10,6 +11,15 @@ function getSES(): SESClient {
   const env = getEnv();
   sesClient = new SESClient({ region: env.SES_REGION ?? env.AWS_REGION });
   return sesClient;
+}
+
+function getSmtpTransport() {
+  const env = getEnv();
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT ?? 1025,
+    secure: false,
+  });
 }
 
 const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
@@ -90,6 +100,18 @@ export async function sendEmail(params: {
 
   if (!fromEmail) {
     console.warn('[email-service] SES_FROM_EMAIL not configured, skipping email');
+    return;
+  }
+
+  if (env.SMTP_HOST) {
+    const transport = getSmtpTransport();
+    await transport.sendMail({
+      from: fromEmail,
+      to: params.to,
+      subject: params.subject,
+      html: params.htmlBody,
+    });
+    console.log(`[email-service] Email sent via SMTP to ${params.to}`);
     return;
   }
 

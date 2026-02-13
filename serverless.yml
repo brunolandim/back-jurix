@@ -29,11 +29,11 @@ provider:
           Resource: arn:aws:ssm:${self:provider.region}:*:parameter/jurix/${opt:stage, 'staging'}/*
   environment:
     NODE_ENV: ${env:NODE_ENV, 'development'}
-    DATABASE_URL: ${ssm:/jurix/${opt:stage, 'staging'}/DATABASE_URL}
+    DATABASE_URL: ${env:DATABASE_URL, ssm:/jurix/${opt:stage, 'staging'}/DATABASE_URL}
     JWT_SECRET: ${env:JWT_SECRET}
     JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
     AWS_REGION_CUSTOM: ${self:provider.region}
-    S3_BUCKET: ${ssm:/jurix/${opt:stage, 'staging'}/S3_BUCKET}
+    S3_BUCKET: ${env:S3_BUCKET, ssm:/jurix/${opt:stage, 'staging'}/S3_BUCKET}
     S3_ENDPOINT: ${env:S3_ENDPOINT, ''}
     S3_PUBLIC_URL: ${env:S3_PUBLIC_URL, ''}
     STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ''}
