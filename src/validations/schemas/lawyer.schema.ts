@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { LawyerRole } from '../../enum';
 import { PASSWORD_MIN_LENGTH } from '../../config/constants';
 
 const lawyerRoleEnum = z.enum(['owner', 'admin', 'lawyer'] as const);
+const avatarColorEnum = z.enum(['default', 'primary', 'secondary', 'success', 'warning', 'danger'] as const);
 
 export const createLawyerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -29,7 +29,7 @@ export const updateLawyerSchema = z.object({
   specialty: z.string().optional(),
   role: lawyerRoleEnum.optional(),
   active: z.boolean().optional(),
-  avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  avatarColor: avatarColorEnum.optional(),
 });
 
 export const updateProfileSchema = z.object({
@@ -41,7 +41,7 @@ export const updateProfileSchema = z.object({
     .string()
     .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
     .optional(),
-  avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  avatarColor: avatarColorEnum.optional(),
 });
 
 export type CreateLawyerSchemaInput = z.infer<typeof createLawyerSchema>;

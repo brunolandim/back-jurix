@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getEnv } from '../config/env';
 
@@ -71,7 +71,7 @@ export async function generatePresignedUploadUrl(
     signableHeaders: new Set(['content-type']),
   });
 
-  const fileUrl = getPublicUrl(key);
+  const fileUrl = await getFileUrl(key);
 
   return { uploadUrl, fileUrl };
 }
@@ -92,15 +92,23 @@ export async function uploadToS3(
   });
 
   await client.send(command);
-  return getPublicUrl(key);
+  return getFileUrl(key);
 }
 
-export function getPublicUrl(key: string): string {
+export async function getFileUrl(key: string): Promise<string> {
   const env = getEnv();
 
+  // Local development (MinIO) — use direct public URL
   if (env.S3_PUBLIC_URL) {
     return `${env.S3_PUBLIC_URL}/${env.S3_BUCKET}/${key}`;
   }
 
-  return `https://${env.S3_BUCKET}.s3.${env.AWS_REGION}.amazonaws.com/${key}`;
+  // AWS — generate presigned GET URL (public access is blocked)
+  const client = getPresignClient();
+  const command = new GetObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: key,
+  });
+
+  return getSignedUrl(client, command, { expiresIn: 604800 }); // 7 days
 }

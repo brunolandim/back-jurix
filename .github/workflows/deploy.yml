@@ -1,0 +1,123 @@
+# ======================================================
+# deploy.yml - CI/CD Pipeline
+# ======================================================
+# Branches:
+#   staging → deploy no ambiente staging
+#   main    → deploy no ambiente production
+#
+# Secrets necessários no GitHub (Settings → Secrets → Actions):
+#   - AWS_ACCESS_KEY_ID
+#   - AWS_SECRET_ACCESS_KEY
+# ======================================================
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+permissions:
+  contents: read
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    runs-on: ubuntu-latest
+
+    # Define variáveis baseado na branch
+    env:
+      TF_WORKSPACE: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      S3_BUCKET: ${{ github.ref_name == 'main' && 'jurix-production-uploads' || 'jurix-staging-uploads' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Build & Package
+        run: |
+          mkdir -p dist/node_modules
+
+          npx esbuild src/functions/public-lambda.ts \
+            --bundle --platform=node --target=node20 \
+            --outdir=dist/src/functions \
+            --external:@prisma/client --external:.prisma/client \
+            '--external:@aws-sdk/*' --minify
+
+          npx esbuild src/functions/private-lambda.ts \
+            --bundle --platform=node --target=node20 \
+            --outdir=dist/src/functions \
+            --external:@prisma/client --external:.prisma/client \
+            '--external:@aws-sdk/*' --minify
+
+          npx esbuild src/functions/notification-worker.ts \
+            --bundle --platform=node --target=node20 \
+            --outdir=dist/src/functions \
+            --external:@prisma/client --external:.prisma/client \
+            '--external:@aws-sdk/*' --minify
+
+          cp -r node_modules/@prisma dist/node_modules/@prisma
+          cp -r node_modules/.prisma dist/node_modules/.prisma
+
+          cd dist && zip -r functions.zip . && cd ..
+
+      - name: Upload to S3
+        run: aws s3 cp dist/functions.zip s3://${{ env.S3_BUCKET }}/deploy/functions.zip
+
+      - name: Update Lambda Functions
+        run: |
+          PREFIX="jurix-${{ env.TF_WORKSPACE }}"
+
+          aws lambda update-function-code \
+            --function-name ${PREFIX}-public-api \
+            --s3-bucket ${{ env.S3_BUCKET }} \
+            --s3-key deploy/functions.zip
+
+          aws lambda update-function-code \
+            --function-name ${PREFIX}-private-api \
+            --s3-bucket ${{ env.S3_BUCKET }} \
+            --s3-key deploy/functions.zip
+
+          aws lambda update-function-code \
+            --function-name ${PREFIX}-notification-worker \
+            --s3-bucket ${{ env.S3_BUCKET }} \
+            --s3-key deploy/functions.zip
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.7.0'
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Select Workspace
+        working-directory: terraform
+        run: terraform workspace select ${{ env.TF_WORKSPACE }} || terraform workspace new ${{ env.TF_WORKSPACE }}
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan

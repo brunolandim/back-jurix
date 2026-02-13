@@ -2,6 +2,9 @@
 CREATE TYPE "LawyerRole" AS ENUM ('owner', 'admin', 'lawyer');
 
 -- CreateEnum
+CREATE TYPE "AvatarColor" AS ENUM ('default', 'primary', 'secondary', 'success', 'warning', 'danger');
+
+-- CreateEnum
 CREATE TYPE "Priority" AS ENUM ('low', 'medium', 'high', 'urgent');
 
 -- CreateEnum
@@ -12,6 +15,9 @@ CREATE TYPE "RejectionReason" AS ENUM ('low_quality', 'wrong_document', 'incompl
 
 -- CreateEnum
 CREATE TYPE "NotificationType" AS ENUM ('hearing', 'deadline', 'meeting', 'task', 'other');
+
+-- CreateEnum
+CREATE TYPE "SubscriptionStatus" AS ENUM ('trialing', 'active', 'past_due', 'canceled', 'unpaid');
 
 -- CreateTable
 CREATE TABLE "organizations" (
@@ -24,6 +30,7 @@ CREATE TABLE "organizations" (
     "active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "stripe_customer_id" TEXT,
 
     CONSTRAINT "organizations_pkey" PRIMARY KEY ("id")
 );
@@ -41,6 +48,7 @@ CREATE TABLE "lawyers" (
     "specialty" TEXT,
     "role" "LawyerRole" NOT NULL DEFAULT 'lawyer',
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "avatar_color" "AvatarColor" NOT NULL DEFAULT 'default',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -68,6 +76,7 @@ CREATE TABLE "legal_cases" (
     "title" TEXT NOT NULL,
     "description" TEXT,
     "client" TEXT NOT NULL,
+    "client_phone" TEXT,
     "priority" "Priority" NOT NULL DEFAULT 'medium',
     "order" DOUBLE PRECISION NOT NULL,
     "assigned_to" TEXT,
@@ -133,14 +142,39 @@ CREATE TABLE "link_documents" (
     CONSTRAINT "link_documents_pkey" PRIMARY KEY ("link_id","document_id")
 );
 
+-- CreateTable
+CREATE TABLE "subscriptions" (
+    "id" TEXT NOT NULL,
+    "organization_id" TEXT NOT NULL,
+    "stripe_subscription_id" TEXT NOT NULL,
+    "stripe_price_id" TEXT NOT NULL,
+    "plan" TEXT NOT NULL,
+    "status" "SubscriptionStatus" NOT NULL DEFAULT 'trialing',
+    "current_period_start" TIMESTAMP(3) NOT NULL,
+    "current_period_end" TIMESTAMP(3) NOT NULL,
+    "trial_end" TIMESTAMP(3),
+    "cancel_at_period_end" BOOLEAN NOT NULL DEFAULT false,
+    "canceled_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "subscriptions_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "organizations_document_key" ON "organizations"("document");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "organizations_stripe_customer_id_key" ON "organizations"("stripe_customer_id");
 
 -- CreateIndex
 CREATE INDEX "organizations_document_idx" ON "organizations"("document");
 
 -- CreateIndex
 CREATE INDEX "organizations_active_idx" ON "organizations"("active");
+
+-- CreateIndex
+CREATE INDEX "organizations_stripe_customer_id_idx" ON "organizations"("stripe_customer_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "lawyers_email_key" ON "lawyers"("email");
@@ -226,6 +260,21 @@ CREATE INDEX "link_documents_link_id_idx" ON "link_documents"("link_id");
 -- CreateIndex
 CREATE INDEX "link_documents_document_id_idx" ON "link_documents"("document_id");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "subscriptions_organization_id_key" ON "subscriptions"("organization_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "subscriptions_stripe_subscription_id_key" ON "subscriptions"("stripe_subscription_id");
+
+-- CreateIndex
+CREATE INDEX "subscriptions_organization_id_idx" ON "subscriptions"("organization_id");
+
+-- CreateIndex
+CREATE INDEX "subscriptions_stripe_subscription_id_idx" ON "subscriptions"("stripe_subscription_id");
+
+-- CreateIndex
+CREATE INDEX "subscriptions_status_idx" ON "subscriptions"("status");
+
 -- AddForeignKey
 ALTER TABLE "lawyers" ADD CONSTRAINT "lawyers_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -264,3 +313,6 @@ ALTER TABLE "link_documents" ADD CONSTRAINT "link_documents_link_id_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "link_documents" ADD CONSTRAINT "link_documents_document_id_fkey" FOREIGN KEY ("document_id") REFERENCES "document_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -14,6 +14,15 @@ enum LawyerRole {
   lawyer
 }
 
+enum AvatarColor {
+  default
+  primary
+  secondary
+  success
+  warning
+  danger
+}
+
 enum Priority {
   low
   medium
@@ -88,7 +97,7 @@ model Lawyer {
   specialty      String?
   role           LawyerRole @default(lawyer)
   active         Boolean    @default(true)
-  avatarColor    String?    @map("avatar_color")
+  avatarColor    AvatarColor @default(default) @map("avatar_color")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 

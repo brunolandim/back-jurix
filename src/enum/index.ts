@@ -1,4 +1,5 @@
 export * from './lawyer-role';
+export * from './avatar-color';
 export * from './priority';
 export * from './document-status';
 export * from './rejection-reason';

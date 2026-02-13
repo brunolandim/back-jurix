@@ -1,4 +1,4 @@
-import type { LawyerRole } from '../enum';
+import type { LawyerRole, AvatarColor } from '../enum';
 
 export interface Lawyer {
   id: string;
@@ -12,7 +12,7 @@ export interface Lawyer {
   specialty: string | null;
   role: LawyerRole;
   active: boolean;
-  avatarColor: string | null;
+  avatarColor: AvatarColor;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,7 +28,7 @@ export interface LawyerPublic {
   specialty: string | null;
   role: LawyerRole;
   active: boolean;
-  avatarColor: string | null;
+  avatarColor: AvatarColor;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,7 +53,7 @@ export interface UpdateLawyerInput {
   specialty?: string;
   role?: LawyerRole;
   active?: boolean;
-  avatarColor?: string | null;
+  avatarColor?: AvatarColor;
 }
 
 export function toPublicLawyer(lawyer: Lawyer): LawyerPublic {
