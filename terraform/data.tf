@@ -16,6 +16,7 @@
 # aws ssm put-parameter --name "/jurix/staging/ses_from_email" --value "noreply@jurix.com.br" --type String
 # aws ssm put-parameter --name "/jurix/staging/whatsapp_phone_number_id" --value "" --type String
 # aws ssm put-parameter --name "/jurix/staging/whatsapp_access_token" --value "" --type SecureString
+# aws ssm put-parameter --name "/jurix/staging/database_url" --value "postgresql://...NEON_URL..." --type SecureString
 # ======================================================
 
 # --- Secrets do SSM (você cria manualmente) ---
@@ -62,6 +63,12 @@ data "aws_ssm_parameter" "whatsapp_phone_number_id" {
   name = "/jurix/${terraform.workspace}/whatsapp_phone_number_id"
 }
 
+# DATABASE_URL do Neon (staging) - lida do SSM parameter manual
+data "aws_ssm_parameter" "database_url" {
+  count = terraform.workspace != "production" ? 1 : 0
+  name  = "/jurix/${terraform.workspace}/database_url"
+}
+
 # ======================================================
 # Locals - Env vars para as Lambdas
 # ======================================================
@@ -70,9 +77,11 @@ data "aws_ssm_parameter" "whatsapp_phone_number_id" {
 # - Valores do SSM → data.aws_ssm_parameter.xxx.value
 
 locals {
+  database_url = terraform.workspace == "production" ? "postgresql://${aws_db_instance.main[0].username}:${random_password.db_password[0].result}@${aws_db_instance.main[0].endpoint}/${aws_db_instance.main[0].db_name}" : data.aws_ssm_parameter.database_url[0].value
+
   env_vars = {
     # --- Vêm do Terraform (criados aqui) ---
-    DATABASE_URL = "postgresql://${aws_db_instance.main.username}:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name}"
+    DATABASE_URL = local.database_url
     S3_BUCKET    = aws_s3_bucket.uploads.bucket
 
     # --- Vêm do SSM (cadastrados manualmente) ---

@@ -31,17 +31,17 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
 
 # CORS - permite o frontend fazer upload via presigned URL
 # Sem isso, o browser bloqueia o upload direto pro S3
+locals {
+  cors_origins = terraform.workspace == "production" ? ["https://app.jurix.com.br"] : ["http://localhost:3000", "https://jurix-git-staging-brunolandims-projects.vercel.app"]
+}
+
 resource "aws_s3_bucket_cors_configuration" "uploads" {
   bucket = aws_s3_bucket.uploads.id
 
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "POST"]
-    allowed_origins = [
-      terraform.workspace == "production"
-        ? "https://app.jurix.com.br"  # ajuste pro seu domínio
-        : "http://localhost:3000"
-    ]
+    allowed_origins = local.cors_origins
     max_age_seconds = 3600
   }
 }

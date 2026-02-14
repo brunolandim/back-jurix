@@ -20,22 +20,26 @@ async function seed() {
     });
     console.log('Organization ready:', org.id);
 
-    // Create default column (idempotent)
-    const existingColumn = await prisma.column.findFirst({
+    // Create default columns (idempotent)
+    const existingColumns = await prisma.column.findMany({
       where: { organizationId: org.id, isDefault: true },
     });
-    if (!existingColumn) {
+    const existingTitles = existingColumns.map((c) => c.title);
+
+    if (!existingTitles.includes('new')) {
       await prisma.column.create({
-        data: {
-          organizationId: org.id,
-          title: 'new',
-          isDefault: true,
-          order: 0,
-        },
+        data: { organizationId: org.id, title: 'new', isDefault: true, order: 0 },
       });
-      console.log('Created default column');
-    } else {
-      console.log('Default column already exists');
+      console.log('Created default column: new');
+    }
+    if (!existingTitles.includes('completed')) {
+      await prisma.column.create({
+        data: { organizationId: org.id, title: 'completed', isDefault: true, order: 999 },
+      });
+      console.log('Created default column: completed');
+    }
+    if (existingTitles.includes('new') && existingTitles.includes('completed')) {
+      console.log('Default columns already exist');
     }
 
     // Create owner lawyer (idempotent)

@@ -23,7 +23,7 @@ export interface PendingNotification extends CaseNotification {
 
 export interface INotificationRepository {
   findById(id: string): Promise<CaseNotification | null>;
-  findByLawyer(lawyerId: string, unreadOnly?: boolean): Promise<CaseNotification[]>;
+  findByLawyer(lawyerId: string): Promise<CaseNotification[]>;
   findByCase(caseId: string): Promise<CaseNotification[]>;
   findPendingToSend(): Promise<PendingNotification[]>;
   create(input: CreateNotificationInput): Promise<CaseNotification>;
