@@ -20,6 +20,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
         assignee: {
@@ -29,6 +30,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
       },
@@ -47,6 +49,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
         assignee: {
@@ -56,6 +59,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
         notifications: true,
@@ -107,6 +111,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
         assignee: {
@@ -116,6 +121,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
       },
@@ -150,6 +156,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
         assignee: {
@@ -159,6 +166,7 @@ export class LegalCaseRepository implements ICaseRepository {
             email: true,
             photo: true,
             oab: true,
+            avatarColor:true,
           },
         },
       },
