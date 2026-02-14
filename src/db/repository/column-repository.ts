@@ -76,11 +76,11 @@ export class ColumnRepository implements IColumnRepository {
 
   async getMaxOrder(organizationId: string): Promise<number> {
     const result = await this.prisma.column.aggregate({
-      where: { organizationId },
+      where: { organizationId, isDefault: false },
       _max: { order: true },
     });
 
-    return result._max.order ?? -1;
+    return result._max.order ?? 0;
   }
 
   async hasCases(columnId: string): Promise<boolean> {

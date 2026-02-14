@@ -66,7 +66,7 @@ export class LegalCaseRepository implements ICaseRepository {
 
   async countByOrganization(organizationId: string): Promise<number> {
     return this.prisma.legalCase.count({
-      where: { organizationId },
+      where: { organizationId, active: true },
     });
   }
 
@@ -132,6 +132,7 @@ export class LegalCaseRepository implements ICaseRepository {
     if (input.client !== undefined) updateData.client = input.client;
     if (input.priority !== undefined) updateData.priority = input.priority;
     if (input.order !== undefined) updateData.order = input.order;
+    if (input.active !== undefined) updateData.active = input.active;
     if (input.assignedTo !== undefined) updateData.assignedTo = input.assignedTo;
 
     if (Object.keys(updateData).length === 0) {

@@ -1,9 +1,12 @@
 # ======================================================
 # rds.tf - Banco de dados PostgreSQL (RDS)
+# Criado apenas no workspace production.
+# Staging usa Neon (free tier) via SSM parameter manual.
 # ======================================================
 
 # Senha gerada automaticamente - ninguém precisa saber
 resource "random_password" "db_password" {
+  count   = terraform.workspace == "production" ? 1 : 0
   length  = 32
   special = false
   # special = false porque alguns caracteres especiais
@@ -12,6 +15,7 @@ resource "random_password" "db_password" {
 
 # Security Group - quem pode acessar o banco
 resource "aws_security_group" "rds" {
+  count       = terraform.workspace == "production" ? 1 : 0
   name        = "${local.prefix}-rds-sg"
   description = "Security group for RDS PostgreSQL"
 
@@ -40,14 +44,13 @@ resource "aws_security_group" "rds" {
 
 # A instância RDS
 resource "aws_db_instance" "main" {
+  count      = terraform.workspace == "production" ? 1 : 0
   identifier = "${local.prefix}-db"
   # identifier = nome do recurso na AWS (não é o nome do banco)
 
   engine         = "postgres"
   engine_version = "16"
-  instance_class = terraform.workspace == "production" ? "db.t3.small" : "db.t3.micro"
-  # t3.micro = ~$15/mês (staging)
-  # t3.small = ~$30/mês (production)
+  instance_class = "db.t3.small"
 
   allocated_storage     = 20  # 20 GB inicial
   max_allocated_storage = 50  # cresce automaticamente até 50 GB
@@ -56,18 +59,17 @@ resource "aws_db_instance" "main" {
 
   db_name  = "jurix"
   username = "jurix"
-  password = random_password.db_password.result
+  password = random_password.db_password[0].result
 
   publicly_accessible    = true
   # true = permite conexão pela internet (necessário sem VPC)
   # A segurança vem do security group + senha forte
   # Para produção com SSM tunnel: mudar pra false + VPC
 
-  vpc_security_group_ids = [aws_security_group.rds.id]
+  vpc_security_group_ids = [aws_security_group.rds[0].id]
 
-  backup_retention_period = terraform.workspace == "production" ? 14 : 1
-  skip_final_snapshot     = terraform.workspace != "production"
-  # staging: sem snapshot final (pode deletar tranquilo)
+  backup_retention_period = 14
+  skip_final_snapshot     = false
   # production: exige snapshot antes de deletar
 
   tags = {
@@ -77,8 +79,8 @@ resource "aws_db_instance" "main" {
 
 # Salva a DATABASE_URL no SSM para usar no Beekeeper ou outros tools
 resource "aws_ssm_parameter" "database_url" {
+  count = terraform.workspace == "production" ? 1 : 0
   name  = "/jurix/${terraform.workspace}/database_url"
   type  = "SecureString"
-  value = "postgresql://${aws_db_instance.main.username}:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name}"
-  # Resultado: postgresql://jurix:SENHA_32_CHARS@jurix-staging-db.xxxxx.us-east-1.rds.amazonaws.com:5432/jurix
+  value = "postgresql://${aws_db_instance.main[0].username}:${random_password.db_password[0].result}@${aws_db_instance.main[0].endpoint}/${aws_db_instance.main[0].db_name}"
 }

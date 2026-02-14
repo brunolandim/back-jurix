@@ -124,9 +124,12 @@ export class LegalCaseUseCase {
       throw new NotFoundError('Column', input.columnId);
     }
 
+    const active = targetColumn.title !== 'completed';
+
     const updated = await this.legalCaseRepo.update(id, {
       columnId: input.columnId,
       order: input.order,
+      active,
     });
 
     return updated!;

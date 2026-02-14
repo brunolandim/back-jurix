@@ -12,6 +12,7 @@ export interface LegalCase {
   clientPhone: string | null;
   priority: Priority;
   order: number;
+  active: boolean;
   assignedTo: string | null;
   createdBy: string;
   createdAt: Date;
@@ -45,6 +46,7 @@ export interface UpdateLegalCaseInput {
   clientPhone?: string;
   priority?: Priority;
   order?: number;
+  active?: boolean;
   assignedTo?: string | null;
 }
 

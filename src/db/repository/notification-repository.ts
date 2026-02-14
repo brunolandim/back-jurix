@@ -13,11 +13,28 @@ export class NotificationRepository implements INotificationRepository {
     return this.prisma.caseNotification.findUnique({ where: { id } });
   }
 
-  async findByLawyer(lawyerId: string, unreadOnly = false): Promise<CaseNotification[]> {
+  async findByLawyer(lawyerId: string): Promise<CaseNotification[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 59, 999);
+
     return this.prisma.caseNotification.findMany({
       where: {
         lawyerId,
-        ...(unreadOnly && { isRead: false }),
+        date: { gte: today, lte: tomorrow },
+        case: { active: true },
+      },
+      include: {
+        case: {
+          select: {
+            id: true,
+            title: true,
+            number: true,
+          },
+        },
       },
       orderBy: { date: 'desc' },
     });

@@ -142,6 +142,7 @@ model LegalCase {
   clientPhone    String?  @map("client_phone")
   priority       Priority @default(medium)
   order          Float
+  active         Boolean  @default(true)
   assignedTo     String?  @map("assigned_to")
   createdBy      String   @map("created_by")
   createdAt      DateTime @default(now()) @map("created_at")
@@ -161,6 +162,7 @@ model LegalCase {
   @@index([number])
   @@index([priority])
   @@index([createdBy])
+  @@index([organizationId, active])
   @@map("legal_cases")
 }
 

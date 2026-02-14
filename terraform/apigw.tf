@@ -87,7 +87,6 @@ locals {
     plans            = aws_api_gateway_resource.plans.id
     webhooks         = aws_api_gateway_resource.webhooks.id
     webhooks_proxy   = aws_api_gateway_resource.webhooks_proxy.id
-    share_links      = aws_api_gateway_resource.share_links.id
     share_links_proxy = aws_api_gateway_resource.share_links_proxy.id
   }
 }
@@ -112,6 +111,28 @@ resource "aws_api_gateway_integration" "public" {
   type                    = "AWS_PROXY"
   integration_http_method = "POST"
   uri                     = aws_lambda_function.public.invoke_arn
+}
+
+# ==========================================================
+# ROTA PRIVADA - /share-links (base, sem proxy) vai para private
+# ==========================================================
+# POST /share-links cria um share link (requer auth → private Lambda)
+# GET/POST /share-links/{token}/... são públicos (via share_links_proxy acima)
+
+resource "aws_api_gateway_method" "share_links_private" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.share_links.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "share_links_private" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.share_links.id
+  http_method             = aws_api_gateway_method.share_links_private.http_method
+  type                    = "AWS_PROXY"
+  integration_http_method = "POST"
+  uri                     = aws_lambda_function.private.invoke_arn
 }
 
 # ==========================================================
@@ -169,6 +190,7 @@ resource "aws_lambda_permission" "apigw_private" {
 
 locals {
   all_resources = merge(local.public_resources, {
+    share_links   = aws_api_gateway_resource.share_links.id
     private_proxy = aws_api_gateway_resource.private_proxy.id
   })
 }
@@ -242,8 +264,10 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.private_proxy,
       aws_api_gateway_method.public,
       aws_api_gateway_method.private,
+      aws_api_gateway_method.share_links_private,
       aws_api_gateway_integration.public,
       aws_api_gateway_integration.private,
+      aws_api_gateway_integration.share_links_private,
     ]))
   }
 

@@ -1,5 +1,6 @@
 export const DEFAULT_COLUMNS = [
-  { title: 'Novo', order: 0, isDefault: true },
+  { title: 'new', order: 0, isDefault: true },
+  { title: 'completed', order: 999, isDefault: true },
 ] as const;
 
 export const PAGINATION = {
