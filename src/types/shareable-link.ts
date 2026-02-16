@@ -10,6 +10,9 @@ export interface ShareableLink {
 }
 
 export interface ShareableLinkWithDocuments extends ShareableLink {
+  caseTitle: string;
+  caseNumber: string;
+  lawyerName: string;
   documents: DocumentRequest[];
 }
 
