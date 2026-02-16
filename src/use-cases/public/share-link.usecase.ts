@@ -50,7 +50,10 @@ export class ShareLinkUseCase {
       const sameDocuments = documentIds.length === linkDocIds.size && documentIds.every((id) => linkDocIds.has(id));
 
       if (sameDocuments) {
-        return { ...activeLink, documents: linkDocuments };
+        const legalCase = await this.caseRepo.findById(activeLink.caseId);
+        const linkWithDocs = await this.shareLinkRepo.findByTokenWithDocuments(activeLink.token);
+        if (linkWithDocs) return linkWithDocs;
+        return { ...activeLink, caseTitle: legalCase?.title ?? '', caseNumber: legalCase?.number ?? '', lawyerName: '', documents: linkDocuments };
       }
 
       await this.shareLinkRepo.expire(activeLink.id);
@@ -58,10 +61,12 @@ export class ShareLinkUseCase {
 
     await this.planEnforcer.enforce(context.organizationId, 'shareLinks');
 
+    const legalCase = await this.caseRepo.findById(caseId);
+
     return this.shareLinkRepo.create({
       caseId,
       documentIds,
-      createdBy: context.lawyerId,
+      createdBy: legalCase?.assignedTo ?? context.lawyerId,
     });
   }
 

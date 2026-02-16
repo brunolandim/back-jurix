@@ -20,13 +20,22 @@ export class ShareLinkRepository implements IShareLinkRepository {
   }
 
   async findByTokenWithDocuments(token: string): Promise<ShareableLinkWithDocuments | null> {
-    const link = await this.findByToken(token);
+    const link = await this.prisma.shareableLink.findUnique({
+      where: { token },
+      include: {
+        case: { select: { title: true, number: true } },
+        creator: { select: { name: true } },
+      },
+    });
     if (!link) return null;
 
     const documents = await this.getDocuments(link.id);
 
     return {
       ...link,
+      caseTitle: link.case.title,
+      caseNumber: link.case.number,
+      lawyerName: link.creator.name,
       documents,
     };
   }
@@ -57,6 +66,10 @@ export class ShareLinkRepository implements IShareLinkRepository {
           caseId: input.caseId,
           createdBy: input.createdBy,
         },
+        include: {
+          case: { select: { title: true, number: true } },
+          creator: { select: { name: true } },
+        },
       });
 
       if (input.documentIds.length > 0) {
@@ -75,6 +88,9 @@ export class ShareLinkRepository implements IShareLinkRepository {
 
     return {
       ...link,
+      caseTitle: link.case.title,
+      caseNumber: link.case.number,
+      lawyerName: link.creator.name,
       documents,
     };
   }
