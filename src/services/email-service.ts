@@ -2,19 +2,19 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import nodemailer from 'nodemailer';
 import type { NotificationType } from '../enum';
 import type { PendingNotification } from '../db/interfaces/inotification-repository';
-import { getEnv } from '../config/env';
+import { getWorkerEnv } from '../config/env-worker';
 
 let sesClient: SESClient | null = null;
 
 function getSES(): SESClient {
   if (sesClient) return sesClient;
-  const env = getEnv();
+  const env = getWorkerEnv();
   sesClient = new SESClient({ region: env.SES_REGION ?? env.AWS_REGION });
   return sesClient;
 }
 
 function getSmtpTransport() {
-  const env = getEnv();
+  const env = getWorkerEnv();
   return nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT ?? 1025,
@@ -95,7 +95,7 @@ export async function sendEmail(params: {
   subject: string;
   htmlBody: string;
 }): Promise<void> {
-  const env = getEnv();
+  const env = getWorkerEnv();
   const fromEmail = env.SES_FROM_EMAIL;
 
   if (!fromEmail) {
@@ -137,7 +137,7 @@ export async function sendNotificationEmail(notification: PendingNotification): 
     return;
   }
 
-  const env = getEnv();
+  const env = getWorkerEnv();
   const typeLabel = NOTIFICATION_TYPE_LABELS[notification.type] ?? 'Notificação';
   const subject = `${typeLabel}: ${notification.case.title} - Processo ${notification.case.number}`;
   const htmlBody = buildNotificationEmail(notification, env.APP_URL);
