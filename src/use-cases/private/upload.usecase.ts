@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { generatePresignedUploadUrl, uploadToS3 } from '../../utils/s3';
+import { generatePresignedUploadUrl, uploadToS3, extractS3Key } from '../../utils/s3';
 import type { AuthContext } from '../../types';
 import type { IShareLinkRepository, IDocumentRepository, ICaseRepository } from '../../db/interfaces';
 import { NotFoundError, ForbiddenError } from '../../errors';
@@ -16,7 +16,7 @@ export class UploadUseCase {
     contentType: string,
     fileName: string,
     context: AuthContext
-  ): Promise<{ uploadUrl: string; fileUrl: string }> {
+  ): Promise<{ uploadUrl: string; fileUrl: string; fileKey: string }> {
     const key = `${context.organizationId}/${folder}/${randomUUID()}-${fileName}`;
     return generatePresignedUploadUrl(key, contentType);
   }
@@ -26,7 +26,7 @@ export class UploadUseCase {
     documentId: string,
     contentType: string,
     fileName: string
-  ): Promise<{ uploadUrl: string; fileUrl: string; documentId: string }> {
+  ): Promise<{ uploadUrl: string; fileUrl: string; fileKey: string; documentId: string }> {
     if (!this.shareLinkRepo || !this.documentRepo || !this.caseRepo) {
       throw new Error('Repositories not initialized');
     }
@@ -82,7 +82,7 @@ export class UploadUseCase {
       throw new NotFoundError('Document', documentId);
     }
 
-    await this.documentRepo.upload(documentId, fileUrl);
+    await this.documentRepo.upload(documentId, extractS3Key(fileUrl));
     await this.shareLinkRepo.checkAndExpire(link.id);
   }
 
@@ -92,10 +92,10 @@ export class UploadUseCase {
     fileName: string,
     data: string,
     context: AuthContext
-  ): Promise<{ fileUrl: string }> {
+  ): Promise<{ fileUrl: string; fileKey: string }> {
     const key = `${context.organizationId}/${folder}/${randomUUID()}-${fileName}`;
     const buffer = Buffer.from(data, 'base64');
-    const fileUrl = await uploadToS3(key, contentType, buffer);
-    return { fileUrl };
+    const fileKey = await uploadToS3(key, contentType, buffer);
+    return { fileUrl: fileKey, fileKey };
   }
 }

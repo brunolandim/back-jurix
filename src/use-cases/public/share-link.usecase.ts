@@ -1,4 +1,5 @@
 import { NotFoundError, ValidationError, ForbiddenError } from '../../errors';
+import { extractS3Key, resolveFileUrls } from '../../utils/s3';
 import type {
   IShareLinkRepository,
   IDocumentRepository,
@@ -52,8 +53,11 @@ export class ShareLinkUseCase {
       if (sameDocuments) {
         const legalCase = await this.caseRepo.findById(activeLink.caseId);
         const linkWithDocs = await this.shareLinkRepo.findByTokenWithDocuments(activeLink.token);
-        if (linkWithDocs) return linkWithDocs;
-        return { ...activeLink, caseTitle: legalCase?.title ?? '', caseNumber: legalCase?.number ?? '', lawyerName: '', documents: linkDocuments };
+        if (linkWithDocs) {
+          linkWithDocs.documents = await resolveFileUrls(linkWithDocs.documents);
+          return linkWithDocs;
+        }
+        return { ...activeLink, caseTitle: legalCase?.title ?? '', caseNumber: legalCase?.number ?? '', lawyerName: '', documents: await resolveFileUrls(linkDocuments) };
       }
 
       await this.shareLinkRepo.expire(activeLink.id);
@@ -63,11 +67,14 @@ export class ShareLinkUseCase {
 
     const legalCase = await this.caseRepo.findById(caseId);
 
-    return this.shareLinkRepo.create({
+    const created = await this.shareLinkRepo.create({
       caseId,
       documentIds,
       createdBy: legalCase?.assignedTo ?? context.lawyerId,
     });
+
+    created.documents = await resolveFileUrls(created.documents);
+    return created;
   }
 
   async getByToken(token: string): Promise<ShareableLinkWithDocuments> {
@@ -81,6 +88,7 @@ export class ShareLinkUseCase {
       throw new ForbiddenError('This link has expired');
     }
 
+    link.documents = await resolveFileUrls(link.documents);
     return link;
   }
 
@@ -105,7 +113,7 @@ export class ShareLinkUseCase {
       throw new NotFoundError('Document', documentId);
     }
 
-    await this.documentRepo.upload(documentId, fileUrl);
+    await this.documentRepo.upload(documentId, extractS3Key(fileUrl));
 
     await this.shareLinkRepo.checkAndExpire(link.id);
   }

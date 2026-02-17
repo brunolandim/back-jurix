@@ -1,5 +1,6 @@
 import type { PrismaClient } from '../prisma';
 import type { IDocumentRepository } from '../interfaces/idocument-repository';
+import { extractS3Key } from '../../utils/s3';
 import type {
   DocumentRequest,
   CreateDocumentRequestInput,
@@ -67,7 +68,7 @@ export class DocumentRepository implements IDocumentRepository {
     return this.prisma.documentRequest.update({
       where: { id },
       data: {
-        fileUrl,
+        fileUrl: extractS3Key(fileUrl),
         status: 'pending_approval',
         uploadedAt: new Date(),
         rejectedAt: null,

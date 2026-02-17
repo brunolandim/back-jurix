@@ -53,10 +53,56 @@ function getPresignClient(): S3Client {
   return presignClient;
 }
 
+/**
+ * Extracts the S3 object key from a full presigned URL.
+ * If the value is already a plain key (no protocol), returns it as-is.
+ */
+export function extractS3Key(fileUrl: string): string {
+  if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+    return fileUrl; // already a key
+  }
+
+  const env = getEnv();
+  const url = new URL(fileUrl);
+
+  // Path-style: /<bucket>/<key> (MinIO / localstack / force-path-style)
+  const bucketPrefix = `/${env.S3_BUCKET}/`;
+  if (url.pathname.startsWith(bucketPrefix)) {
+    return decodeURIComponent(url.pathname.slice(bucketPrefix.length));
+  }
+
+  // Virtual-hosted style: <bucket>.s3.<region>.amazonaws.com/<key>
+  return decodeURIComponent(url.pathname.slice(1)); // strip leading "/"
+}
+
+/**
+ * Takes a stored S3 key (or legacy presigned URL) and returns a fresh presigned URL.
+ * Returns null when the input is null.
+ */
+export async function resolveFileUrl(fileUrl: string | null): Promise<string | null> {
+  if (!fileUrl) return null;
+  const key = extractS3Key(fileUrl);
+  return getFileUrl(key);
+}
+
+/**
+ * Resolves fileUrl on every DocumentRequest-like object inside an array.
+ */
+export async function resolveFileUrls<T extends { fileUrl: string | null }>(
+  items: T[]
+): Promise<T[]> {
+  return Promise.all(
+    items.map(async (item) => ({
+      ...item,
+      fileUrl: await resolveFileUrl(item.fileUrl),
+    }))
+  );
+}
+
 export async function generatePresignedUploadUrl(
   key: string,
   contentType: string
-): Promise<{ uploadUrl: string; fileUrl: string }> {
+): Promise<{ uploadUrl: string; fileUrl: string; fileKey: string }> {
   const env = getEnv();
   const client = getPresignClient();
 
@@ -73,7 +119,7 @@ export async function generatePresignedUploadUrl(
 
   const fileUrl = await getFileUrl(key);
 
-  return { uploadUrl, fileUrl };
+  return { uploadUrl, fileUrl, fileKey: key };
 }
 
 export async function uploadToS3(
@@ -92,7 +138,7 @@ export async function uploadToS3(
   });
 
   await client.send(command);
-  return getFileUrl(key);
+  return key;
 }
 
 export async function getFileUrl(key: string): Promise<string> {
