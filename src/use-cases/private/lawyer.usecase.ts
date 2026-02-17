@@ -15,8 +15,8 @@ export class LawyerUseCase {
     private planEnforcer: PlanEnforcerUseCase
   ) {}
 
-  async list(organizationId: string, activeOnly = true): Promise<LawyerPublic[]> {
-    const lawyers = await this.lawyerRepo.findByOrganization(organizationId, activeOnly);
+  async list(organizationId: string): Promise<LawyerPublic[]> {
+    const lawyers = await this.lawyerRepo.findByOrganization(organizationId);
     return lawyers.map(toPublicLawyer);
   }
 
