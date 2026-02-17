@@ -1,4 +1,5 @@
 import { NotFoundError, ValidationError } from '../../errors';
+import { resolveFileUrl, resolveFileUrls } from '../../utils/s3';
 import type {
   IDocumentRepository,
   ICaseRepository,
@@ -28,7 +29,8 @@ export class DocumentUseCase {
 
   async listByCase(caseId: string, context: AuthContext): Promise<DocumentRequest[]> {
     await this.verifyCaseOwnership(caseId, context.organizationId);
-    return this.documentRepo.findByCase(caseId);
+    const documents = await this.documentRepo.findByCase(caseId);
+    return resolveFileUrls(documents);
   }
 
   async create(
@@ -74,8 +76,9 @@ export class DocumentUseCase {
       throw new ValidationError('Document is not pending approval');
     }
 
-    const updated = await this.documentRepo.approve(id);
-    return updated!;
+    const updated = (await this.documentRepo.approve(id))!;
+    updated.fileUrl = await resolveFileUrl(updated.fileUrl);
+    return updated;
   }
 
   async reject(
@@ -96,8 +99,9 @@ export class DocumentUseCase {
       throw new ValidationError('Document is not pending approval');
     }
 
-    const updated = await this.documentRepo.reject(id, reason, note);
-    return updated!;
+    const updated = (await this.documentRepo.reject(id, reason, note))!;
+    updated.fileUrl = await resolveFileUrl(updated.fileUrl);
+    return updated;
   }
 
   async delete(id: string, context: AuthContext): Promise<void> {
