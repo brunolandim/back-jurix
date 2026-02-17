@@ -32,12 +32,9 @@ export class LawyerRepository implements ILawyerRepository {
     });
   }
 
-  async findByOrganization(organizationId: string, activeOnly = true): Promise<Lawyer[]> {
+  async findByOrganization(organizationId: string): Promise<Lawyer[]> {
     return this.prisma.lawyer.findMany({
-      where: {
-        organizationId,
-        ...(activeOnly && { active: true }),
-      },
+      where: { organizationId },
       orderBy: { name: 'asc' },
     });
   }
