@@ -50,7 +50,7 @@ resource "aws_db_instance" "main" {
 
   engine         = "postgres"
   engine_version = "16"
-  instance_class = "db.t3.small"
+  instance_class = "db.t4g.micro"
 
   allocated_storage     = 20  # 20 GB inicial
   max_allocated_storage = 50  # cresce automaticamente até 50 GB
