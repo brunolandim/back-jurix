@@ -8,6 +8,7 @@ import type {
 } from '../../types';
 import { toPublicLawyer } from '../../types';
 import type { PlanEnforcerUseCase } from './plan-enforcer.usecase';
+import { extractS3Key } from '../../utils/s3';
 
 export class LawyerUseCase {
   constructor(
@@ -17,7 +18,7 @@ export class LawyerUseCase {
 
   async list(organizationId: string): Promise<LawyerPublic[]> {
     const lawyers = await this.lawyerRepo.findByOrganization(organizationId);
-    return lawyers.map(toPublicLawyer);
+    return Promise.all(lawyers.map(toPublicLawyer));
   }
 
   async getById(id: string, organizationId: string): Promise<LawyerPublic> {
@@ -75,6 +76,10 @@ export class LawyerUseCase {
       if (existing) {
         throw new ConflictError('Email already in use', 'email');
       }
+    }
+
+    if (input.photo) {
+      input = { ...input, photo: extractS3Key(input.photo) };
     }
 
     const updated = await this.lawyerRepo.update(id, input);

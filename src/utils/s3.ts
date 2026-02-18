@@ -141,6 +141,21 @@ export async function uploadToS3(
   return key;
 }
 
+/**
+ * Returns a permanent public URL for objects in the photos/ folder.
+ * Requires the bucket policy to allow s3:GetObject on the {orgId}/photos/{file} prefix.
+ */
+export function getPublicUrl(key: string): string {
+  const env = getEnv();
+
+  if (env.S3_PUBLIC_URL) {
+    return `${env.S3_PUBLIC_URL}/${env.S3_BUCKET}/${key}`;
+  }
+
+  const encodedKey = key.split('/').map(encodeURIComponent).join('/');
+  return `https://${env.S3_BUCKET}.s3.${env.AWS_REGION}.amazonaws.com/${encodedKey}`;
+}
+
 export async function getFileUrl(key: string): Promise<string> {
   const env = getEnv();
 

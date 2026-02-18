@@ -1,4 +1,5 @@
 import type { LawyerRole, AvatarColor } from '../enum';
+import { getPublicUrl, extractS3Key } from '../utils/s3';
 
 export interface Lawyer {
   id: string;
@@ -58,5 +59,6 @@ export interface UpdateLawyerInput {
 
 export function toPublicLawyer(lawyer: Lawyer): LawyerPublic {
   const { passwordHash, ...publicData } = lawyer;
-  return publicData;
+  const photo = lawyer.photo ? getPublicUrl(extractS3Key(lawyer.photo)) : null;
+  return { ...publicData, photo };
 }
