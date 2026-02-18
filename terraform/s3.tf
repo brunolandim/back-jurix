@@ -7,15 +7,34 @@ resource "aws_s3_bucket" "uploads" {
   # Resultado: "jurix-staging-uploads" ou "jurix-production-uploads"
 }
 
-# Bloquear TODO acesso público
-# Mesmo que alguém erre uma policy, o bucket continua privado
+# Bloquear ACLs públicas, mas permitir bucket policy pública (necessária para fotos)
 resource "aws_s3_bucket_public_access_block" "uploads" {
   bucket = aws_s3_bucket.uploads.id
 
   block_public_acls       = true
-  block_public_policy     = true
+  block_public_policy     = false
   ignore_public_acls      = true
-  restrict_public_buckets = true
+  restrict_public_buckets = false
+}
+
+# Acesso público de leitura apenas para fotos de perfil (*/photos/*)
+# Documentos continuam privados — acessados via presigned URL
+resource "aws_s3_bucket_policy" "uploads" {
+  bucket     = aws_s3_bucket.uploads.id
+  depends_on = [aws_s3_bucket_public_access_block.uploads]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadPhotos"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.uploads.arn}/*/photos/*"
+      }
+    ]
+  })
 }
 
 # Encriptação - todos os arquivos são encriptados em repouso
