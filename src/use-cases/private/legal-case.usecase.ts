@@ -13,7 +13,7 @@ import type {
   MoveCaseInput,
   AuthContext,
 } from '../../types';
-import { toPublicLawyer } from '../../types';
+import { LawyerMapper } from '../../mappers/lawyer.mapper';
 import type { PlanEnforcerUseCase } from './plan-enforcer.usecase';
 
 export class LegalCaseUseCase {
@@ -40,7 +40,7 @@ export class LegalCaseUseCase {
     if (legalCase.assignedTo) {
       const lawyer = await this.lawyerRepo.findById(legalCase.assignedTo);
       if (lawyer) {
-        assignee = toPublicLawyer(lawyer);
+        assignee = LawyerMapper.toPublic(lawyer);
       }
     }
 

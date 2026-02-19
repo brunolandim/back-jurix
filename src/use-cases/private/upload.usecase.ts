@@ -82,7 +82,7 @@ export class UploadUseCase {
       throw new NotFoundError('Document', documentId);
     }
 
-    await this.documentRepo.upload(documentId, extractS3Key(fileUrl));
+    await this.documentRepo.upload(documentId, fileUrl);
     await this.shareLinkRepo.checkAndExpire(link.id);
   }
 

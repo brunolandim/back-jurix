@@ -6,9 +6,9 @@ import type {
   UpdateLawyerInput,
   AuthContext,
 } from '../../types';
-import { toPublicLawyer } from '../../types';
 import type { PlanEnforcerUseCase } from './plan-enforcer.usecase';
 import { extractS3Key } from '../../utils/s3';
+import { LawyerMapper } from '../../mappers/lawyer.mapper';
 
 export class LawyerUseCase {
   constructor(
@@ -18,7 +18,7 @@ export class LawyerUseCase {
 
   async list(organizationId: string): Promise<LawyerPublic[]> {
     const lawyers = await this.lawyerRepo.findByOrganization(organizationId);
-    return Promise.all(lawyers.map(toPublicLawyer));
+    return lawyers.map((l) => LawyerMapper.toPublic(l));
   }
 
   async getById(id: string, organizationId: string): Promise<LawyerPublic> {
@@ -28,7 +28,7 @@ export class LawyerUseCase {
       throw new NotFoundError('Lawyer', id);
     }
 
-    return toPublicLawyer(lawyer);
+    return LawyerMapper.toPublic(lawyer);
   }
 
   async create(input: CreateLawyerInput, context: AuthContext): Promise<LawyerPublic> {
@@ -49,7 +49,7 @@ export class LawyerUseCase {
     }
 
     const lawyer = await this.lawyerRepo.create(input);
-    return toPublicLawyer(lawyer);
+    return LawyerMapper.toPublic(lawyer);
   }
 
   async update(
@@ -83,7 +83,7 @@ export class LawyerUseCase {
     }
 
     const updated = await this.lawyerRepo.update(id, input);
-    return toPublicLawyer(updated!);
+    return LawyerMapper.toPublic(updated!);
   }
 
   async delete(id: string, context: AuthContext): Promise<void> {

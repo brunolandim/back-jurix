@@ -1,5 +1,5 @@
 import { NotFoundError, ValidationError } from '../../errors';
-import { resolveFileUrl, resolveFileUrls } from '../../utils/s3';
+import { DocumentMapper } from '../../mappers/document.mapper';
 import type {
   IDocumentRepository,
   ICaseRepository,
@@ -30,7 +30,7 @@ export class DocumentUseCase {
   async listByCase(caseId: string, context: AuthContext): Promise<DocumentRequest[]> {
     await this.verifyCaseOwnership(caseId, context.organizationId);
     const documents = await this.documentRepo.findByCase(caseId);
-    return resolveFileUrls(documents);
+    return Promise.all(documents.map((doc) => DocumentMapper.build(doc)));
   }
 
   async create(
@@ -77,8 +77,7 @@ export class DocumentUseCase {
     }
 
     const updated = (await this.documentRepo.approve(id))!;
-    updated.fileUrl = await resolveFileUrl(updated.fileUrl);
-    return updated;
+    return DocumentMapper.build(updated);
   }
 
   async reject(
@@ -100,8 +99,7 @@ export class DocumentUseCase {
     }
 
     const updated = (await this.documentRepo.reject(id, reason, note))!;
-    updated.fileUrl = await resolveFileUrl(updated.fileUrl);
-    return updated;
+    return DocumentMapper.build(updated);
   }
 
   async delete(id: string, context: AuthContext): Promise<void> {
