@@ -13,4 +13,8 @@ export class LawyerMapper {
     const { passwordHash, ...publicData } = LawyerMapper.build(lawyer);
     return publicData;
   }
+
+  static resolvePhoto(photo: string | null): string | null {
+    return photo ? getPublicUrl(extractS3Key(photo)) : null;
+  }
 }
