@@ -96,10 +96,12 @@ model Lawyer {
   oab            String     @unique
   specialty      String?
   role           LawyerRole @default(lawyer)
-  active         Boolean    @default(true)
-  avatarColor    AvatarColor @default(default) @map("avatar_color")
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
+  active               Boolean     @default(true)
+  avatarColor          AvatarColor @default(default) @map("avatar_color")
+  passwordResetCode    String?     @map("password_reset_code")
+  passwordResetExpires DateTime?   @map("password_reset_expires")
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
 
   organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   assignedCases  LegalCase[]        @relation("AssignedCases")

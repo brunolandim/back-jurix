@@ -13,6 +13,8 @@ export interface Lawyer {
   role: LawyerRole;
   active: boolean;
   avatarColor: AvatarColor;
+  passwordResetCode: string | null;
+  passwordResetExpires: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -90,6 +90,41 @@ export function buildNotificationEmail(notification: PendingNotification, appUrl
 </html>`;
 }
 
+export function buildPasswordResetEmail(resetUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
+        <tr><td style="background:#18181b;padding:24px 32px;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Jurix</h1>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h2 style="margin:0 0 16px;color:#18181b;font-size:20px;">Redefinição de senha</h2>
+          <p style="margin:0 0 16px;color:#3f3f46;font-size:15px;line-height:1.6;">
+            Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha.
+          </p>
+          <p style="margin:0 0 24px;color:#71717a;font-size:14px;">
+            Este link expira em <strong>1 hora</strong>. Se você não solicitou a redefinição de senha, ignore este email.
+          </p>
+          <a href="${resetUrl}" style="display:inline-block;background:#18181b;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
+            Redefinir senha
+          </a>
+        </td></tr>
+        <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
+          <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">
+            Jurix - Sistema de Gestão Jurídica
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 export async function sendEmail(params: {
   to: string;
   subject: string;
