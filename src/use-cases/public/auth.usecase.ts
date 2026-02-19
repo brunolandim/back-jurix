@@ -3,7 +3,7 @@ import { comparePassword } from '../../utils/password';
 import { signToken } from '../../utils/jwt';
 import type { ILawyerRepository } from '../../db/interfaces';
 import type { LawyerPublic } from '../../types';
-import { toPublicLawyer } from '../../types';
+import { LawyerMapper } from '../../mappers/lawyer.mapper';
 
 export interface LoginResult {
   token: string;
@@ -38,7 +38,7 @@ export class AuthUseCase {
 
     return {
       token,
-      lawyer: toPublicLawyer(lawyer),
+      lawyer: LawyerMapper.toPublic(lawyer),
     };
   }
 
@@ -49,6 +49,6 @@ export class AuthUseCase {
       throw new NotFoundError('Lawyer', lawyerId);
     }
 
-    return toPublicLawyer(lawyer);
+    return LawyerMapper.toPublic(lawyer);
   }
 }

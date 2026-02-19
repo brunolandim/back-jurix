@@ -9,6 +9,7 @@ import type {
   UpdateColumnInput,
   LegalCase,
 } from '../../types';
+import { DocumentMapper } from '../../mappers/document.mapper';
 
 export interface ColumnWithCases extends Column {
   cases: LegalCase[];
@@ -31,7 +32,13 @@ export class ColumnUseCase {
 
     for (const column of columns) {
       const cases = await this.caseRepo.findByColumn(column.id);
-      columnsWithCases.push({ ...column, cases });
+      const casesWithSignedUrls = await Promise.all(
+        cases.map(async (c: any) => ({
+          ...c,
+          documents: c.documents ? await Promise.all(c.documents.map((doc: any) => DocumentMapper.build(doc))) : c.documents,
+        }))
+      );
+      columnsWithCases.push({ ...column, cases: casesWithSignedUrls });
     }
 
     return columnsWithCases;
