@@ -5,7 +5,7 @@ import { verifyStripeWebhook } from '../helpers/stripe-webhook';
 import { matchRoute } from '../helpers/router';
 import type { Route } from '../helpers/router';
 import { validate } from '../validations/validate';
-import { loginSchema, uploadDocumentSchema, publicPresignedUrlSchema } from '../validations/schemas';
+import { loginSchema, uploadDocumentSchema, publicPresignedUrlSchema, forgotPasswordSchema, resetPasswordSchema } from '../validations/schemas';
 import { AuthUseCase, ShareLinkUseCase, WebhookUseCase } from '../use-cases/public';
 import { PlanEnforcerUseCase, UploadUseCase } from '../use-cases/private';
 import {
@@ -47,6 +47,18 @@ const routes: Route[] = [
     const input = validate(loginSchema, body);
     const result = await authUseCase.login(input.email, input.password);
     return success(result);
+  }},
+  { method: 'post', pattern: 'auth/forgot-password', handler: async ({ event }) => {
+    const body = parseBody(event);
+    const input = validate(forgotPasswordSchema, body);
+    await authUseCase.forgotPassword(input.email);
+    return success({ message: 'Se o email estiver cadastrado, você receberá um link para redefinir sua senha.' });
+  }},
+  { method: 'post', pattern: 'auth/reset-password', handler: async ({ event }) => {
+    const body = parseBody(event);
+    const input = validate(resetPasswordSchema, body);
+    await authUseCase.resetPassword(input.email, input.code, input.password);
+    return success({ message: 'Senha redefinida com sucesso.' });
   }},
 
   // Share Links

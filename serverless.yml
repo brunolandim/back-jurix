@@ -265,6 +265,14 @@ functions:
           path: /auth/login
           method: post
           cors: true
+      - http:
+          path: /auth/forgot-password
+          method: post
+          cors: true
+      - http:
+          path: /auth/reset-password
+          method: post
+          cors: true
 
       # Plans (public)
       - http:

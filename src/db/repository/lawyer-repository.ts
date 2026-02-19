@@ -90,4 +90,21 @@ export class LawyerRepository implements ILawyerRepository {
 
     return result !== null;
   }
+
+  async findByEmailAndCode(email: string, code: string): Promise<Lawyer | null> {
+    return this.prisma.lawyer.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        passwordResetCode: code,
+        passwordResetExpires: { gt: new Date() },
+      },
+    });
+  }
+
+  async setResetCode(id: string, code: string | null, expires: Date | null): Promise<void> {
+    await this.prisma.lawyer.update({
+      where: { id },
+      data: { passwordResetCode: code, passwordResetExpires: expires },
+    });
+  }
 }

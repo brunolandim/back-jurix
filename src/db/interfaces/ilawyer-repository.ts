@@ -13,4 +13,6 @@ export interface ILawyerRepository {
   create(input: CreateLawyerInput): Promise<Lawyer>;
   update(id: string, input: UpdateLawyerInput): Promise<Lawyer | null>;
   delete(id: string): Promise<boolean>;
+  findByEmailAndCode(email: string, code: string): Promise<Lawyer | null>;
+  setResetCode(id: string, code: string | null, expires: Date | null): Promise<void>;
 }
