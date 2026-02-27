@@ -64,7 +64,7 @@ export function buildNotificationEmail(notification: PendingNotification, appUrl
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
         <tr><td style="background:#18181b;padding:24px 32px;">
-          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Jurix</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Kronolex</h1>
         </td></tr>
         <tr><td style="padding:32px;">
           <span style="display:inline-block;background:${typeColor};color:#ffffff;padding:4px 12px;border-radius:9999px;font-size:13px;font-weight:600;margin-bottom:16px;">
@@ -75,12 +75,12 @@ export function buildNotificationEmail(notification: PendingNotification, appUrl
           ${notification.message ? `<p style="margin:0 0 16px;color:#3f3f46;font-size:15px;line-height:1.6;">${notification.message}</p>` : ''}
           <p style="margin:0 0 24px;color:#71717a;font-size:14px;">${dateStr}</p>
           <a href="${appUrl}/dashboard" style="display:inline-block;background:#18181b;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
-            Abrir no Jurix
+            Abrir no Kronolex
           </a>
         </td></tr>
         <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
           <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">
-            Jurix - Sistema de Gestão Jurídica
+            Kronolex - Sistema de Gestão Jurídica
           </p>
         </td></tr>
       </table>
@@ -99,7 +99,7 @@ export function buildPasswordResetEmail(resetUrl: string): string {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
         <tr><td style="background:#18181b;padding:24px 32px;">
-          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Jurix</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Kronolex</h1>
         </td></tr>
         <tr><td style="padding:32px;">
           <h2 style="margin:0 0 16px;color:#18181b;font-size:20px;">Redefinição de senha</h2>
@@ -115,7 +115,7 @@ export function buildPasswordResetEmail(resetUrl: string): string {
         </td></tr>
         <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
           <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">
-            Jurix - Sistema de Gestão Jurídica
+            Kronolex - Sistema de Gestão Jurídica
           </p>
         </td></tr>
       </table>
