@@ -10,7 +10,7 @@ async function build() {
     entryPoints,
     bundle: true,
     platform: 'node',
-    target: 'node20',
+    target: 'node22',
     outdir: 'dist/functions',
     format: 'esm',
     sourcemap: true,

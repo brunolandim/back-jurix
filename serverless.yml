@@ -4,7 +4,7 @@ frameworkVersion: '3'
 
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs22.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'dev'}
   memorySize: 512
@@ -59,7 +59,7 @@ custom:
     bundle: true
     minify: true
     sourcemap: true
-    target: node20
+    target: node22
     platform: node
     external:
         - '@prisma/client'
