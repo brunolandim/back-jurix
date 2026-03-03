@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import type { NotificationType } from '../enum';
 import type { PendingNotification } from '../db/interfaces/inotification-repository';
 import { getWorkerEnv } from '../config/env-worker';
+import { sendEmailViaResend } from './resend-email-service';
 
 let sesClient: SESClient | null = null;
 
@@ -147,6 +148,17 @@ export async function sendEmail(params: {
       html: params.htmlBody,
     });
     console.log(`[email-service] Email sent via SMTP to ${params.to}`);
+    return;
+  }
+
+  if (env.RESEND_API_KEY) {
+    await sendEmailViaResend({
+      apiKey: env.RESEND_API_KEY,
+      from: fromEmail,
+      to: params.to,
+      subject: params.subject,
+      htmlBody: params.htmlBody,
+    });
     return;
   }
 

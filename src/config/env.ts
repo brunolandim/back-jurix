@@ -34,6 +34,9 @@ const envSchema = z.object({
   SES_FROM_EMAIL: z.string().email().optional(),
   SES_REGION: z.string().optional(),
 
+  // Resend (temporary while AWS SES is not approved)
+  RESEND_API_KEY: z.string().optional(),
+
   // SMTP (local dev with Mailpit)
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
