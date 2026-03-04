@@ -74,7 +74,7 @@ export class AuthUseCase {
     try {
       await sendEmail({
         to: lawyer.email,
-        subject: 'Redefinição de senha - Jurix',
+        subject: 'Redefinição de senha - Kronolex',
         htmlBody,
       });
     } catch (err) {
