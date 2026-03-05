@@ -22,16 +22,6 @@ export class CleanupUseCase {
         },
       });
 
-      // Delete link_documents for expired links older than 3 months
-      await tx.linkDocument.deleteMany({
-        where: {
-          link: {
-            isExpired: true,
-            createdAt: { lt: threeMonthsAgo },
-          },
-        },
-      });
-
       // Delete expired shareable links older than 3 months
       const links = await tx.shareableLink.deleteMany({
         where: {
