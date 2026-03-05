@@ -3,6 +3,7 @@ import { DocumentMapper } from '../../mappers/document.mapper';
 import type {
   IDocumentRepository,
   ICaseRepository,
+  IShareLinkRepository,
 } from '../../db/interfaces';
 import type {
   DocumentRequest,
@@ -17,7 +18,8 @@ export class DocumentUseCase {
   constructor(
     private documentRepo: IDocumentRepository,
     private caseRepo: ICaseRepository,
-    private planEnforcer: PlanEnforcerUseCase
+    private planEnforcer: PlanEnforcerUseCase,
+    private shareLinkRepo: IShareLinkRepository
   ) {}
 
   private async verifyCaseOwnership(caseId: string, organizationId: string): Promise<void> {
@@ -77,6 +79,13 @@ export class DocumentUseCase {
     }
 
     const updated = (await this.documentRepo.approve(id))!;
+
+    const links = await this.shareLinkRepo.findByCase(caseId);
+    const activeLink = links.find((l) => !l.isExpired);
+    if (activeLink) {
+      await this.shareLinkRepo.checkAndExpire(activeLink.id);
+    }
+
     return DocumentMapper.build(updated);
   }
 

@@ -83,7 +83,6 @@ export class UploadUseCase {
     }
 
     await this.documentRepo.upload(documentId, fileUrl);
-    await this.shareLinkRepo.checkAndExpire(link.id);
   }
 
   async uploadFile(

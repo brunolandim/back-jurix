@@ -114,7 +114,5 @@ export class ShareLinkUseCase {
     }
 
     await this.documentRepo.upload(documentId, extractS3Key(fileUrl));
-
-    await this.shareLinkRepo.checkAndExpire(link.id);
   }
 }
