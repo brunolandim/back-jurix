@@ -15,7 +15,7 @@ export const presignedUrlSchema = z.object({
 });
 
 export const publicPresignedUrlSchema = z.object({
-  contentType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+  contentType: z.enum(allowedContentTypes),
   fileName: z.string().min(1),
   documentId: z.string().uuid(),
 });
