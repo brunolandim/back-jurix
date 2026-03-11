@@ -19,6 +19,7 @@ import {
   createDocumentSchema,
   updateDocumentSchema,
   rejectDocumentSchema,
+  lawyerUploadDocumentSchema,
   createNotificationSchema,
   createShareLinkSchema,
   createCheckoutSchema,
@@ -215,6 +216,12 @@ const routes: Route<AuthContext>[] = [
     const input = validate(rejectDocumentSchema, body);
     const document = await documentUseCase.reject(params.id, caseId, input.rejectionReason, input.rejectionNote, context);
     return success(document);
+  }},
+  { method: 'post', pattern: 'documents/lawyer-upload', handler: async ({ event, context }) => {
+    const body = parseBody(event);
+    const input = validate(lawyerUploadDocumentSchema, body);
+    const document = await documentUseCase.lawyerUpload(input.caseId, { name: input.name, description: input.description, fileUrl: input.fileUrl }, context);
+    return created(document);
   }},
 
   // Notifications

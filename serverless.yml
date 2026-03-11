@@ -183,6 +183,10 @@ functions:
           path: /documents/{id}/reject
           method: patch
           cors: true
+      - http:
+          path: /documents/lawyer-upload
+          method: post
+          cors: true
 
       # Notifications
       - http:

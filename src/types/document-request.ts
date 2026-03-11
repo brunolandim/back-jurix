@@ -1,4 +1,4 @@
-import type { DocumentStatus, RejectionReason } from '../enum';
+import type { DocumentStatus, DocumentSource, RejectionReason } from '../enum';
 
 export interface DocumentRequest {
   id: string;
@@ -6,6 +6,7 @@ export interface DocumentRequest {
   name: string;
   description: string | null;
   status: DocumentStatus;
+  source: DocumentSource;
   fileUrl: string | null;
   requestedAt: Date;
   uploadedAt: Date | null;
@@ -38,5 +39,12 @@ export interface RejectDocumentInput {
 
 export interface UploadDocumentInput {
   documentId: string;
+  fileUrl: string;
+}
+
+export interface LawyerUploadDocumentInput {
+  caseId: string;
+  name: string;
+  description?: string;
   fileUrl: string;
 }

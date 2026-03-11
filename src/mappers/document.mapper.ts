@@ -9,6 +9,7 @@ export class DocumentMapper {
       name: doc.name,
       description: doc.description,
       status: doc.status,
+      source: doc.source,
       fileUrl: await resolveFileUrl(doc.fileUrl),
       requestedAt: doc.requestedAt,
       uploadedAt: doc.uploadedAt,

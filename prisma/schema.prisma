@@ -37,6 +37,11 @@ enum DocumentStatus {
   received
 }
 
+enum DocumentSource {
+  client_request
+  lawyer_upload
+}
+
 enum RejectionReason {
   low_quality
   wrong_document
@@ -174,6 +179,7 @@ model DocumentRequest {
   name            String
   description     String?
   status          DocumentStatus   @default(pending)
+  source          DocumentSource   @default(client_request)
   fileUrl         String?          @map("file_url")
   requestedAt     DateTime         @default(now()) @map("requested_at")
   uploadedAt      DateTime?        @map("uploaded_at")
