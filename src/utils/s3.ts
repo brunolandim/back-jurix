@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getEnv } from '../config/env';
 
@@ -154,6 +154,18 @@ export function getPublicUrl(key: string): string {
 
   const encodedKey = key.split('/').map(encodeURIComponent).join('/');
   return `https://${env.S3_BUCKET}.s3.${env.AWS_REGION}.amazonaws.com/${encodedKey}`;
+}
+
+export async function deleteFromS3(key: string): Promise<void> {
+  const env = getEnv();
+  const client = getS3();
+
+  const command = new DeleteObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: key,
+  });
+
+  await client.send(command);
 }
 
 export async function getFileUrl(key: string): Promise<string> {

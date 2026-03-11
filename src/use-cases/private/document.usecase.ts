@@ -9,6 +9,7 @@ import type {
   DocumentRequest,
   CreateDocumentRequestInput,
   UpdateDocumentRequestInput,
+  LawyerUploadDocumentInput,
   AuthContext,
 } from '../../types';
 import type { RejectionReason } from '../../enum';
@@ -109,6 +110,16 @@ export class DocumentUseCase {
 
     const updated = (await this.documentRepo.reject(id, reason, note))!;
     return DocumentMapper.build(updated);
+  }
+
+  async lawyerUpload(
+    caseId: string,
+    input: Omit<LawyerUploadDocumentInput, 'caseId'>,
+    context: AuthContext
+  ): Promise<DocumentRequest> {
+    await this.verifyCaseOwnership(caseId, context.organizationId);
+    const doc = await this.documentRepo.lawyerUpload({ caseId, ...input });
+    return DocumentMapper.build(doc);
   }
 
   async delete(id: string, context: AuthContext): Promise<void> {

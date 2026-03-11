@@ -5,6 +5,7 @@ import type {
   DocumentRequest,
   CreateDocumentRequestInput,
   UpdateDocumentRequestInput,
+  LawyerUploadDocumentInput,
 } from '../../types';
 import type { RejectionReason } from '../../enum';
 
@@ -61,6 +62,21 @@ export class DocumentRepository implements IDocumentRepository {
     return this.prisma.documentRequest.update({
       where: { id },
       data: updateData,
+    });
+  }
+
+  async lawyerUpload(input: LawyerUploadDocumentInput): Promise<DocumentRequest> {
+    return this.prisma.documentRequest.create({
+      data: {
+        caseId: input.caseId,
+        name: input.name,
+        description: input.description ?? null,
+        source: 'lawyer_upload',
+        status: 'received',
+        fileUrl: extractS3Key(input.fileUrl),
+        uploadedAt: new Date(),
+        receivedAt: new Date(),
+      },
     });
   }
 

@@ -21,7 +21,15 @@ export const uploadDocumentSchema = z.object({
   fileUrl: z.string().url('Invalid file URL'),
 });
 
+export const lawyerUploadDocumentSchema = z.object({
+  caseId: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  description: z.string().optional(),
+  fileUrl: z.string().min(1),
+});
+
 export type CreateDocumentSchemaInput = z.infer<typeof createDocumentSchema>;
 export type UpdateDocumentSchemaInput = z.infer<typeof updateDocumentSchema>;
 export type RejectDocumentSchemaInput = z.infer<typeof rejectDocumentSchema>;
 export type UploadDocumentSchemaInput = z.infer<typeof uploadDocumentSchema>;
+export type LawyerUploadDocumentSchemaInput = z.infer<typeof lawyerUploadDocumentSchema>;

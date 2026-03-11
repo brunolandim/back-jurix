@@ -1,5 +1,5 @@
 import { NotFoundError, ValidationError, ForbiddenError } from '../../errors';
-import { extractS3Key, resolveFileUrls } from '../../utils/s3';
+import { extractS3Key, resolveFileUrls, deleteFromS3 } from '../../utils/s3';
 import type {
   IShareLinkRepository,
   IDocumentRepository,
@@ -111,6 +111,10 @@ export class ShareLinkUseCase {
     const document = await this.documentRepo.findById(documentId);
     if (!document) {
       throw new NotFoundError('Document', documentId);
+    }
+
+    if (document.fileUrl) {
+      await deleteFromS3(document.fileUrl).catch(() => {});
     }
 
     await this.documentRepo.upload(documentId, extractS3Key(fileUrl));
