@@ -33,12 +33,12 @@ export class ShareLinkUseCase {
     const documents = await this.documentRepo.findByIds(documentIds);
 
     if (documents.length !== documentIds.length) {
-      throw new ValidationError('One or more documents not found');
+      throw new ValidationError('One or more documents not found', undefined, 'errors.documentsNotFound');
     }
 
     for (const doc of documents) {
       if (doc.caseId !== caseId) {
-        throw new ValidationError('All documents must belong to the same case');
+        throw new ValidationError('All documents must belong to the same case', undefined, 'errors.documentsDifferentCase');
       }
     }
 
@@ -85,7 +85,7 @@ export class ShareLinkUseCase {
     }
 
     if (link.isExpired) {
-      throw new ForbiddenError('This link has expired');
+      throw new ForbiddenError('This link has expired', 'errors.linkExpired');
     }
 
     link.documents = await resolveFileUrls(link.documents);
@@ -100,7 +100,7 @@ export class ShareLinkUseCase {
     }
 
     if (link.isExpired) {
-      throw new ForbiddenError('This link has expired');
+      throw new ForbiddenError('This link has expired', 'errors.linkExpired');
     }
 
     const isLinked = link.documents.some((doc) => doc.id === documentId);

@@ -20,17 +20,17 @@ export class AuthUseCase {
     const lawyer = await this.lawyerRepo.findByEmail(email);
 
     if (!lawyer) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password', 'errors.invalidCredentials');
     }
 
     if (!lawyer.active) {
-      throw new UnauthorizedError('Account is inactive');
+      throw new UnauthorizedError('Account is inactive', 'errors.accountInactive');
     }
 
     const isValidPassword = await comparePassword(password, lawyer.passwordHash);
 
     if (!isValidPassword) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password', 'errors.invalidCredentials');
     }
 
     const token = signToken({
@@ -86,7 +86,7 @@ export class AuthUseCase {
     const lawyer = await this.lawyerRepo.findByEmailAndCode(email, code);
 
     if (!lawyer) {
-      throw new UnauthorizedError('Código inválido ou expirado');
+      throw new UnauthorizedError('Código inválido ou expirado', 'errors.invalidVerificationCode');
     }
 
     await this.lawyerRepo.update(lawyer.id, { password: newPassword });

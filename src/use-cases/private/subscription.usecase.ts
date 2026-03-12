@@ -54,7 +54,7 @@ export class SubscriptionUseCase {
 
   async createCheckout(plan: string, context: AuthContext): Promise<{ url: string | null; upgraded?: boolean }> {
     if (context.role !== LawyerRole.OWNER) {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const priceId = getPriceIdByPlan(plan);
@@ -169,7 +169,7 @@ export class SubscriptionUseCase {
 
   async createPortal(context: AuthContext): Promise<{ url: string }> {
     if (context.role !== LawyerRole.OWNER) {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const organization = await this.organizationRepo.findById(context.organizationId);
@@ -190,7 +190,7 @@ export class SubscriptionUseCase {
 
   async cancel(context: AuthContext): Promise<void> {
     if (context.role !== LawyerRole.OWNER) {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const subscription = await this.subscriptionRepo.findByOrganizationId(context.organizationId);
@@ -214,7 +214,7 @@ export class SubscriptionUseCase {
 
   async reactivate(context: AuthContext): Promise<void> {
     if (context.role !== LawyerRole.OWNER) {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const subscription = await this.subscriptionRepo.findByOrganizationId(context.organizationId);

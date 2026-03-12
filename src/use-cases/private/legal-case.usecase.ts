@@ -58,7 +58,7 @@ export class LegalCaseUseCase {
       throw new NotFoundError('Column', input.columnId);
     }
     if (column.organizationId !== context.organizationId) {
-      throw new ValidationError('Column does not belong to your organization');
+      throw new ValidationError('Column does not belong to your organization', undefined, 'errors.columnNotInOrg');
     }
 
     if (input.assignedTo) {
