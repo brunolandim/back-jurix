@@ -1,4 +1,5 @@
 import { NotFoundError, ConflictError, ForbiddenError } from '../../errors';
+import { LawyerRole } from '../../enum';
 import type { ILawyerRepository } from '../../db/interfaces';
 import type {
   LawyerPublic,
@@ -34,7 +35,7 @@ export class LawyerUseCase {
   async create(input: CreateLawyerInput, context: AuthContext): Promise<LawyerPublic> {
     await this.planEnforcer.enforce(context.organizationId, 'lawyers');
 
-    if (context.role !== 'owner' && context.role !== 'admin') {
+    if (!([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
       throw new ForbiddenError('Only owner or admin can create lawyers');
     }
 
@@ -63,11 +64,15 @@ export class LawyerUseCase {
       throw new NotFoundError('Lawyer', id);
     }
 
-    if (input.role && context.role !== 'owner') {
+    if (input.active !== undefined && !([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
+      throw new ForbiddenError('Only owner or admin can change active status');
+    }
+
+    if (input.role && input.role !== lawyer.role && context.role !== LawyerRole.OWNER) {
       throw new ForbiddenError('Only owner can change roles');
     }
 
-    if (lawyer.role === 'owner' && input.role && input.role !== 'owner') {
+    if (lawyer.role === LawyerRole.OWNER && input.role && input.role !== LawyerRole.OWNER) {
       throw new ForbiddenError('Cannot change owner role');
     }
 
@@ -93,7 +98,7 @@ export class LawyerUseCase {
       throw new NotFoundError('Lawyer', id);
     }
 
-    if (lawyer.role === 'owner') {
+    if (lawyer.role === LawyerRole.OWNER) {
       throw new ForbiddenError('Cannot delete organization owner');
     }
 

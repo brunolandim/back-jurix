@@ -6,6 +6,7 @@ import type {
   UpdateLawyerInput,
 } from '../../types';
 import { hashPassword } from '../../utils/password';
+import { LawyerRole } from '../../enum';
 
 export class LawyerRepository implements ILawyerRepository {
   constructor(private prisma: PrismaClient) {}
@@ -51,7 +52,7 @@ export class LawyerRepository implements ILawyerRepository {
         phone: input.phone ?? null,
         oab: input.oab.toUpperCase(),
         specialty: input.specialty ?? null,
-        role: input.role ?? 'lawyer',
+        role: input.role ?? LawyerRole.LAWYER,
       },
     });
   }
