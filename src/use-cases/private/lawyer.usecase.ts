@@ -1,4 +1,5 @@
 import { NotFoundError, ConflictError, ForbiddenError } from '../../errors';
+import { LawyerRole } from '../../enum';
 import type { ILawyerRepository } from '../../db/interfaces';
 import type {
   LawyerPublic,
@@ -34,18 +35,18 @@ export class LawyerUseCase {
   async create(input: CreateLawyerInput, context: AuthContext): Promise<LawyerPublic> {
     await this.planEnforcer.enforce(context.organizationId, 'lawyers');
 
-    if (context.role !== 'owner' && context.role !== 'admin') {
-      throw new ForbiddenError('Only owner or admin can create lawyers');
+    if (!([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
+      throw new ForbiddenError('Only owner or admin can create lawyers', 'errors.ownerAdminOnlyCreate');
     }
 
     const existingEmail = await this.lawyerRepo.findByEmail(input.email);
     if (existingEmail) {
-      throw new ConflictError('Email already in use', 'email');
+      throw new ConflictError('Email already in use', 'email', 'errors.emailInUse');
     }
 
     const existingOab = await this.lawyerRepo.findByOab(input.oab);
     if (existingOab) {
-      throw new ConflictError('OAB number already registered', 'oab');
+      throw new ConflictError('OAB number already registered', 'oab', 'errors.oabInUse');
     }
 
     const lawyer = await this.lawyerRepo.create(input);
@@ -63,18 +64,22 @@ export class LawyerUseCase {
       throw new NotFoundError('Lawyer', id);
     }
 
-    if (input.role && context.role !== 'owner') {
-      throw new ForbiddenError('Only owner can change roles');
+    if (input.active !== undefined && !([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
+      throw new ForbiddenError('Only owner or admin can change active status', 'errors.ownerAdminOnlyStatus');
     }
 
-    if (lawyer.role === 'owner' && input.role && input.role !== 'owner') {
-      throw new ForbiddenError('Cannot change owner role');
+    if (input.role && input.role !== lawyer.role && context.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Only owner can change roles', 'errors.ownerOnlyRoles');
+    }
+
+    if (lawyer.role === LawyerRole.OWNER && input.role && input.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Cannot change owner role', 'errors.cannotChangeOwnerRole');
     }
 
     if (input.email && input.email !== lawyer.email) {
       const existing = await this.lawyerRepo.findByEmail(input.email);
       if (existing) {
-        throw new ConflictError('Email already in use', 'email');
+        throw new ConflictError('Email already in use', 'email', 'errors.emailInUse');
       }
     }
 
@@ -93,12 +98,12 @@ export class LawyerUseCase {
       throw new NotFoundError('Lawyer', id);
     }
 
-    if (lawyer.role === 'owner') {
-      throw new ForbiddenError('Cannot delete organization owner');
+    if (lawyer.role === LawyerRole.OWNER) {
+      throw new ForbiddenError('Cannot delete organization owner', 'errors.cannotDeleteOwner');
     }
 
     if (lawyer.id === context.lawyerId) {
-      throw new ForbiddenError('Cannot delete yourself');
+      throw new ForbiddenError('Cannot delete yourself', 'errors.cannotDeleteSelf');
     }
 
     await this.lawyerRepo.delete(id);

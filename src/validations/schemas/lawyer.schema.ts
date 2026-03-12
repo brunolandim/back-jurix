@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { PASSWORD_MIN_LENGTH } from '../../config/constants';
+import { LAWYER_ROLES } from '../../enum';
+import type { LawyerRole } from '../../enum';
 
-const lawyerRoleEnum = z.enum(['owner', 'admin', 'lawyer'] as const);
+const lawyerRoleEnum = z.enum(LAWYER_ROLES as [LawyerRole, ...LawyerRole[]]);
 const avatarColorEnum = z.enum(['default', 'primary', 'secondary', 'success', 'warning', 'danger'] as const);
 
 export const createLawyerSchema = z.object({

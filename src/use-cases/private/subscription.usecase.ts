@@ -9,6 +9,7 @@ import type {
 } from '../../db/interfaces';
 import type { AuthContext, SubscriptionInfo } from '../../types';
 import type { PlanType } from '../../enum';
+import { LawyerRole } from '../../enum';
 import { PLANS, TRIAL_DAYS } from '../../config/constants';
 import { getPriceIdByPlan } from '../../config/stripe-plans';
 import { getStripe } from '../../utils/stripe';
@@ -52,8 +53,8 @@ export class SubscriptionUseCase {
   }
 
   async createCheckout(plan: string, context: AuthContext): Promise<{ url: string | null; upgraded?: boolean }> {
-    if (context.role !== 'owner') {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+    if (context.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const priceId = getPriceIdByPlan(plan);
@@ -167,8 +168,8 @@ export class SubscriptionUseCase {
   }
 
   async createPortal(context: AuthContext): Promise<{ url: string }> {
-    if (context.role !== 'owner') {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+    if (context.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const organization = await this.organizationRepo.findById(context.organizationId);
@@ -188,8 +189,8 @@ export class SubscriptionUseCase {
   }
 
   async cancel(context: AuthContext): Promise<void> {
-    if (context.role !== 'owner') {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+    if (context.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const subscription = await this.subscriptionRepo.findByOrganizationId(context.organizationId);
@@ -212,8 +213,8 @@ export class SubscriptionUseCase {
   }
 
   async reactivate(context: AuthContext): Promise<void> {
-    if (context.role !== 'owner') {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions');
+    if (context.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
 
     const subscription = await this.subscriptionRepo.findByOrganizationId(context.organizationId);

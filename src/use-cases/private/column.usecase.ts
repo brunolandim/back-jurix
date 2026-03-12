@@ -83,12 +83,12 @@ export class ColumnUseCase {
     }
 
     if (column.isDefault) {
-      throw new ForbiddenError('Cannot delete default column');
+      throw new ForbiddenError('Cannot delete default column', 'errors.cannotDeleteDefaultColumn');
     }
 
     const hasCases = await this.columnRepo.hasCases(id);
     if (hasCases) {
-      throw new ValidationError('Cannot delete column with cases. Move cases first.');
+      throw new ValidationError('Cannot delete column with cases. Move cases first.', undefined, 'errors.columnHasCases');
     }
 
     await this.columnRepo.delete(id);

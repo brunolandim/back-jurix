@@ -76,7 +76,7 @@ export class DocumentUseCase {
     }
 
     if (document.status !== 'pending_approval') {
-      throw new ValidationError('Document is not pending approval');
+      throw new ValidationError('Document is not pending approval', undefined, 'errors.documentNotPending');
     }
 
     const updated = (await this.documentRepo.approve(id))!;
@@ -105,7 +105,7 @@ export class DocumentUseCase {
     }
 
     if (document.status !== 'pending_approval') {
-      throw new ValidationError('Document is not pending approval');
+      throw new ValidationError('Document is not pending approval', undefined, 'errors.documentNotPending');
     }
 
     const updated = (await this.documentRepo.reject(id, reason, note))!;
