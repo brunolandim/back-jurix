@@ -39,6 +39,10 @@ export class LawyerUseCase {
       throw new ForbiddenError('Only owner or admin can create lawyers', 'errors.ownerAdminOnlyCreate');
     }
 
+    if (input.role === LawyerRole.OWNER && context.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Only owner can assign owner role', 'errors.ownerOnlyAssignOwner');
+    }
+
     const existingEmail = await this.lawyerRepo.findByEmail(input.email);
     if (existingEmail) {
       throw new ConflictError('Email already in use', 'email', 'errors.emailInUse');
