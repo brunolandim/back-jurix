@@ -5,8 +5,8 @@ import { verifyStripeWebhook } from '../helpers/stripe-webhook';
 import { matchRoute } from '../helpers/router';
 import type { Route } from '../helpers/router';
 import { validate } from '../validations/validate';
-import { loginSchema, uploadDocumentSchema, publicPresignedUrlSchema, forgotPasswordSchema, resetPasswordSchema } from '../validations/schemas';
-import { AuthUseCase, ShareLinkUseCase, WebhookUseCase } from '../use-cases/public';
+import { loginSchema, registerSchema, uploadDocumentSchema, publicPresignedUrlSchema, forgotPasswordSchema, resetPasswordSchema } from '../validations/schemas';
+import { AuthUseCase, RegisterUseCase, ShareLinkUseCase, WebhookUseCase } from '../use-cases/public';
 import { PlanEnforcerUseCase, UploadUseCase } from '../use-cases/private';
 import {
   LawyerRepository,
@@ -15,6 +15,7 @@ import {
   ShareLinkRepository,
   SubscriptionRepository,
   OrganizationRepository,
+  ColumnRepository,
 } from '../db/repository';
 import { getPrisma } from '../db/prisma';
 import { PLANS } from '../config/constants';
@@ -26,16 +27,24 @@ const documentRepo = new DocumentRepository(prisma);
 const shareLinkRepo = new ShareLinkRepository(prisma);
 
 const organizationRepo = new OrganizationRepository(prisma);
+const columnRepo = new ColumnRepository(prisma);
 const subscriptionRepo = new SubscriptionRepository(prisma);
 
 const planEnforcerUseCase = new PlanEnforcerUseCase(subscriptionRepo, lawyerRepo, caseRepo, shareLinkRepo);
 const authUseCase = new AuthUseCase(lawyerRepo);
+const registerUseCase = new RegisterUseCase(organizationRepo, columnRepo, lawyerRepo);
 const shareLinkUseCase = new ShareLinkUseCase(shareLinkRepo, documentRepo, caseRepo, planEnforcerUseCase);
 const webhookUseCase = new WebhookUseCase(subscriptionRepo, organizationRepo);
 const uploadUseCase = new UploadUseCase(shareLinkRepo, documentRepo, caseRepo);
 
 const routes: Route[] = [
   // Auth
+  { method: 'post', pattern: 'auth/register', handler: async ({ event }) => {
+    const body = parseBody(event);
+    const input = validate(registerSchema, body);
+    const result = await registerUseCase.execute(input);
+    return success(result);
+  }},
   { method: 'post', pattern: 'auth', handler: async ({ event }) => {
     const body = parseBody(event);
     const input = validate(loginSchema, body);
