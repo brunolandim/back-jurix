@@ -20,7 +20,10 @@ export const resetPasswordSchema = z.object({
 
 export const registerSchema = z.object({
   companyName: z.string().min(2, 'Company name must be at least 2 characters'),
-  document: z.string().min(14, 'Invalid CNPJ'),
+  document: z
+    .string()
+    .transform(v => v.replace(/\D/g, ''))
+    .pipe(z.string().length(14, 'Invalid CNPJ')),
   companyEmail: z.string().email('Invalid email format').optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
   companyPhone: z.string().optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
   name: z.string().min(2, 'Name must be at least 2 characters'),
