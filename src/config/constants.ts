@@ -26,7 +26,7 @@ export const ALLOWED_FILE_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 7;
 
 export interface PlanLimits {
   lawyers: number | null;
