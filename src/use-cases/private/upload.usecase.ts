@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { generatePresignedUploadUrl, uploadToS3, extractS3Key } from '../../utils/s3';
 import type { AuthContext } from '../../types';
 import type { IShareLinkRepository, IDocumentRepository, ICaseRepository } from '../../db/interfaces';
-import { NotFoundError, ForbiddenError } from '../../errors';
+import { NotFoundError, ForbiddenError, ValidationError } from '../../errors';
 
 export class UploadUseCase {
   constructor(
@@ -63,7 +63,7 @@ export class UploadUseCase {
   }
 
   async confirmPublicUpload(token: string, documentId: string, fileUrl: string): Promise<void> {
-    if (!this.shareLinkRepo || !this.documentRepo) {
+    if (!this.shareLinkRepo || !this.documentRepo || !this.caseRepo) {
       throw new Error('Repositories not initialized');
     }
 
@@ -82,7 +82,13 @@ export class UploadUseCase {
       throw new NotFoundError('Document', documentId);
     }
 
-    await this.documentRepo.upload(documentId, fileUrl);
+    const legalCase = await this.caseRepo.findById(link.caseId);
+    const key = extractS3Key(fileUrl);
+    if (!legalCase || !key.startsWith(`${legalCase.organizationId}/documents/`) || key.includes('..')) {
+      throw new ValidationError('Invalid file', undefined, 'errors.invalidFile');
+    }
+
+    await this.documentRepo.upload(documentId, key);
   }
 
   async uploadFile(
