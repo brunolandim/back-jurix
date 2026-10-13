@@ -29,12 +29,18 @@ export class LegalCaseUseCase {
     return this.legalCaseRepo.findByOrganization(organizationId);
   }
 
-  async getById(id: string): Promise<LegalCaseWithAssignee> {
+  private async findOwned(id: string, organizationId: string): Promise<LegalCase> {
     const legalCase = await this.legalCaseRepo.findById(id);
 
-    if (!legalCase) {
+    if (!legalCase || legalCase.organizationId !== organizationId) {
       throw new NotFoundError('Case', id);
     }
+
+    return legalCase;
+  }
+
+  async getById(id: string, context: AuthContext): Promise<LegalCaseWithAssignee> {
+    const legalCase = await this.findOwned(id, context.organizationId);
 
     let assignee = null;
     if (legalCase.assignedTo) {
@@ -83,11 +89,7 @@ export class LegalCaseUseCase {
     input: UpdateLegalCaseInput,
     context: AuthContext
   ): Promise<LegalCase> {
-    const legalCase = await this.legalCaseRepo.findById(id);
-
-    if (!legalCase) {
-      throw new NotFoundError('Case', id);
-    }
+    const legalCase = await this.findOwned(id, context.organizationId);
 
     if (input.columnId && input.columnId !== legalCase.columnId) {
       const newColumn = await this.columnRepo.findById(input.columnId);
@@ -113,11 +115,7 @@ export class LegalCaseUseCase {
   }
 
   async move(id: string, input: MoveCaseInput, context: AuthContext): Promise<LegalCase> {
-    const legalCase = await this.legalCaseRepo.findById(id);
-
-    if (!legalCase) {
-      throw new NotFoundError('Case', id);
-    }
+    const legalCase = await this.findOwned(id, context.organizationId);
 
     const targetColumn = await this.columnRepo.findById(input.columnId);
     if (!targetColumn || targetColumn.organizationId !== context.organizationId) {
@@ -140,11 +138,7 @@ export class LegalCaseUseCase {
     assignedTo: string | null,
     context: AuthContext
   ): Promise<LegalCase> {
-    const legalCase = await this.legalCaseRepo.findById(id);
-
-    if (!legalCase) {
-      throw new NotFoundError('Case', id);
-    }
+    const legalCase = await this.findOwned(id, context.organizationId);
 
     if (assignedTo) {
       const assignee = await this.lawyerRepo.findById(assignedTo);
@@ -163,11 +157,7 @@ export class LegalCaseUseCase {
   }
 
   async delete(id: string, context: AuthContext): Promise<void> {
-    const legalCase = await this.legalCaseRepo.findById(id);
-
-    if (!legalCase) {
-      throw new NotFoundError('Case', id);
-    }
+    const legalCase = await this.findOwned(id, context.organizationId);
 
     await this.legalCaseRepo.delete(id);
   }

@@ -10,7 +10,7 @@ export class LawyerMapper {
   }
 
   static toPublic(lawyer: Lawyer): LawyerPublic {
-    const { passwordHash, ...publicData } = LawyerMapper.build(lawyer);
+    const { passwordHash, passwordResetCode, passwordResetExpires, ...publicData } = LawyerMapper.build(lawyer);
     return publicData;
   }
 
