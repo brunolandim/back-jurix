@@ -33,7 +33,7 @@ export class LawyerUseCase {
   }
 
   async create(input: CreateLawyerInput, context: AuthContext): Promise<LawyerPublic> {
-    await this.planEnforcer.enforce(context.organizationId, 'lawyers');
+    await this.planEnforcer.enforce(context, 'lawyers');
 
     if (!([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
       throw new ForbiddenError('Only owner or admin can create lawyers', 'errors.ownerAdminOnlyCreate');

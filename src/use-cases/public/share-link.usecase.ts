@@ -63,7 +63,7 @@ export class ShareLinkUseCase {
       await this.shareLinkRepo.expire(activeLink.id);
     }
 
-    await this.planEnforcer.enforce(context.organizationId, 'shareLinks');
+    await this.planEnforcer.enforce(context, 'shareLinks');
 
     const legalCase = await this.caseRepo.findById(caseId);
 

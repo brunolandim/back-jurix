@@ -10,6 +10,7 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "setup:dev": "tsx scripts/migrate.ts && tsx scripts/seed.ts",
+    "create:super-admin": "tsx scripts/create-super-admin.ts",
     "start:stripe": "stripe listen --forward-to localhost:8008/dev/webhooks/stripe",
     "worker": "docker exec jurix-api npx tsx scripts/run-worker.ts"
   },

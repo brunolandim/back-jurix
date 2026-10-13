@@ -51,7 +51,7 @@ export class LegalCaseUseCase {
     input: Omit<CreateLegalCaseInput, 'organizationId' | 'createdBy' | 'order'>,
     context: AuthContext
   ): Promise<LegalCase> {
-    await this.planEnforcer.enforce(context.organizationId, 'activeCases');
+    await this.planEnforcer.enforce(context, 'activeCases');
 
     const column = await this.columnRepo.findById(input.columnId);
     if (!column) {
