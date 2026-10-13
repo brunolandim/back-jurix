@@ -33,8 +33,6 @@ export class LawyerUseCase {
   }
 
   async create(input: CreateLawyerInput, context: AuthContext): Promise<LawyerPublic> {
-    await this.planEnforcer.enforce(context, 'lawyers');
-
     if (!([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
       throw new ForbiddenError('Only owner or admin can create lawyers', 'errors.ownerAdminOnlyCreate');
     }
@@ -42,6 +40,8 @@ export class LawyerUseCase {
     if (input.role === LawyerRole.OWNER && context.role !== LawyerRole.OWNER) {
       throw new ForbiddenError('Only owner can assign owner role', 'errors.ownerOnlyAssignOwner');
     }
+
+    await this.planEnforcer.enforce(context, 'lawyers');
 
     const existingEmail = await this.lawyerRepo.findByEmail(input.email);
     if (existingEmail) {
@@ -81,6 +81,10 @@ export class LawyerUseCase {
 
     if (input.active !== undefined && !([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
       throw new ForbiddenError('Only owner or admin can change active status', 'errors.ownerAdminOnlyStatus');
+    }
+
+    if (input.active === true && !lawyer.active) {
+      await this.planEnforcer.enforce(context, 'lawyers');
     }
 
     if (input.role && input.role !== lawyer.role && context.role !== LawyerRole.OWNER) {

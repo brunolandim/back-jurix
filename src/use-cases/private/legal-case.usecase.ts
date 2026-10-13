@@ -16,6 +16,8 @@ import type {
 import { LawyerMapper } from '../../mappers/lawyer.mapper';
 import type { PlanEnforcerUseCase } from './plan-enforcer.usecase';
 
+const COMPLETED_COLUMN = 'completed';
+
 export class LegalCaseUseCase {
   constructor(
     private legalCaseRepo: ICaseRepository,
@@ -57,14 +59,17 @@ export class LegalCaseUseCase {
     input: Omit<CreateLegalCaseInput, 'organizationId' | 'createdBy' | 'order'>,
     context: AuthContext
   ): Promise<LegalCase> {
-    await this.planEnforcer.enforce(context, 'activeCases');
-
     const column = await this.columnRepo.findById(input.columnId);
     if (!column) {
       throw new NotFoundError('Column', input.columnId);
     }
     if (column.organizationId !== context.organizationId) {
       throw new ValidationError('Column does not belong to your organization', undefined, 'errors.columnNotInOrg');
+    }
+
+    const active = column.title !== COMPLETED_COLUMN;
+    if (active) {
+      await this.planEnforcer.enforce(context, 'activeCases');
     }
 
     if (input.assignedTo) {
@@ -81,6 +86,7 @@ export class LegalCaseUseCase {
       organizationId: context.organizationId,
       createdBy: context.lawyerId,
       order: maxOrder + 1,
+      active,
     });
   }
 
@@ -91,10 +97,16 @@ export class LegalCaseUseCase {
   ): Promise<LegalCase> {
     const legalCase = await this.findOwned(id, context.organizationId);
 
+    let active: boolean | undefined;
     if (input.columnId && input.columnId !== legalCase.columnId) {
       const newColumn = await this.columnRepo.findById(input.columnId);
       if (!newColumn || newColumn.organizationId !== context.organizationId) {
         throw new NotFoundError('Column', input.columnId);
+      }
+
+      active = newColumn.title !== COMPLETED_COLUMN;
+      if (active && !legalCase.active) {
+        await this.planEnforcer.enforce(context, 'activeCases');
       }
     }
 
@@ -105,7 +117,7 @@ export class LegalCaseUseCase {
       }
     }
 
-    const updated = await this.legalCaseRepo.update(id, input);
+    const updated = await this.legalCaseRepo.update(id, active === undefined ? input : { ...input, active });
 
     if (input.assignedTo && input.assignedTo !== legalCase.assignedTo) {
       await this.notificationRepo.reassignPending(id, input.assignedTo);
@@ -122,7 +134,10 @@ export class LegalCaseUseCase {
       throw new NotFoundError('Column', input.columnId);
     }
 
-    const active = targetColumn.title !== 'completed';
+    const active = targetColumn.title !== COMPLETED_COLUMN;
+    if (active && !legalCase.active) {
+      await this.planEnforcer.enforce(context, 'activeCases');
+    }
 
     const updated = await this.legalCaseRepo.update(id, {
       columnId: input.columnId,

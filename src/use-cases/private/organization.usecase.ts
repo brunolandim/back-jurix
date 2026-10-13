@@ -1,4 +1,5 @@
-import { NotFoundError } from '../../errors';
+import { NotFoundError, ForbiddenError } from '../../errors';
+import { LawyerRole } from '../../enum';
 import { DEFAULT_COLUMNS } from '../../config/constants';
 import type {
   IOrganizationRepository,
@@ -8,6 +9,7 @@ import type {
   Organization,
   CreateOrganizationInput,
   UpdateOrganizationInput,
+  AuthContext,
 } from '../../types';
 
 export class OrganizationUseCase {
@@ -41,7 +43,11 @@ export class OrganizationUseCase {
     return org;
   }
 
-  async update(id: string, input: UpdateOrganizationInput): Promise<Organization> {
+  async update(id: string, input: UpdateOrganizationInput, context: AuthContext): Promise<Organization> {
+    if (!([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
+      throw new ForbiddenError('Only owner or admin can edit the organization', 'errors.ownerAdminOnlyOrganization');
+    }
+
     const org = await this.orgRepo.update(id, input);
 
     if (!org) {
