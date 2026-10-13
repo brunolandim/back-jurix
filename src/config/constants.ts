@@ -53,7 +53,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     type: 'pro',
     price: 14700,
     limits: {
-      lawyers: 3,
+      lawyers: 1,
       activeCases: 30,
       shareLinks: 30,
       documents: null,
