@@ -83,6 +83,10 @@ export class LawyerUseCase {
       throw new ForbiddenError('Only owner or admin can change active status', 'errors.ownerAdminOnlyStatus');
     }
 
+    if (input.active === true && !lawyer.active) {
+      await this.planEnforcer.enforce(context, 'lawyers');
+    }
+
     if (input.role && input.role !== lawyer.role && context.role !== LawyerRole.OWNER) {
       throw new ForbiddenError('Only owner can change roles', 'errors.ownerOnlyRoles');
     }

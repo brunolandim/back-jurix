@@ -102,6 +102,7 @@ export class LegalCaseRepository implements ICaseRepository {
         order: input.order,
         assignedTo: input.assignedTo ?? null,
         createdBy: input.createdBy,
+        active: input.active ?? true,
       },
       include: {
         creator: {
