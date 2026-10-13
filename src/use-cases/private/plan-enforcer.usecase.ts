@@ -6,7 +6,7 @@ import type {
 } from '../../db/interfaces';
 import { PLANS } from '../../config/constants';
 import { PlanLimitError, SubscriptionRequiredError, ReadOnlyModeError } from '../../errors';
-import type { Subscription } from '../../types';
+import type { Subscription, AuthContext } from '../../types';
 
 type ResourceType = 'lawyers' | 'activeCases' | 'shareLinks';
 
@@ -18,7 +18,10 @@ export class PlanEnforcerUseCase {
     private shareLinkRepo: IShareLinkRepository
   ) {}
 
-  async enforce(organizationId: string, resource: ResourceType): Promise<void> {
+  async enforce(context: AuthContext, resource: ResourceType): Promise<void> {
+    if (context.isSuperAdmin) return;
+
+    const { organizationId } = context;
     const subscription = await this.subscriptionRepo.findByOrganizationId(organizationId);
 
     this.enforceActiveSubscription(subscription);

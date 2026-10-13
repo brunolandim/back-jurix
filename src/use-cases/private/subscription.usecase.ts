@@ -28,7 +28,7 @@ export class SubscriptionUseCase {
   async getInfo(context: AuthContext): Promise<SubscriptionInfo> {
     const subscription = await this.subscriptionRepo.findByOrganizationId(context.organizationId);
 
-    const plan = subscription ? (PLANS[subscription.plan] ?? null) : null;
+    const plan = subscription && !context.isSuperAdmin ? (PLANS[subscription.plan] ?? null) : null;
 
     const [lawyerCount, caseCount, documentCount, shareLinkCount] = await Promise.all([
       this.lawyerRepo.countByOrganization(context.organizationId),
@@ -49,13 +49,22 @@ export class SubscriptionUseCase {
       },
       trialEndsAt: subscription?.trialEnd ?? null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
+      exempt: context.isSuperAdmin,
     };
   }
 
-  async createCheckout(plan: string, context: AuthContext): Promise<{ url: string | null; upgraded?: boolean }> {
+  private assertCanManage(context: AuthContext): void {
+    if (context.isSuperAdmin) {
+      throw new ForbiddenError('Super admin accounts are exempt from plans', 'errors.superAdminExempt');
+    }
+
     if (context.role !== LawyerRole.OWNER) {
       throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
     }
+  }
+
+  async createCheckout(plan: string, context: AuthContext): Promise<{ url: string | null; upgraded?: boolean }> {
+    this.assertCanManage(context);
 
     const priceId = getPriceIdByPlan(plan);
     if (!priceId) {
@@ -168,9 +177,7 @@ export class SubscriptionUseCase {
   }
 
   async createPortal(context: AuthContext): Promise<{ url: string }> {
-    if (context.role !== LawyerRole.OWNER) {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
-    }
+    this.assertCanManage(context);
 
     const organization = await this.organizationRepo.findById(context.organizationId);
     if (!organization || !organization.stripeCustomerId) {
@@ -189,9 +196,7 @@ export class SubscriptionUseCase {
   }
 
   async cancel(context: AuthContext): Promise<void> {
-    if (context.role !== LawyerRole.OWNER) {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
-    }
+    this.assertCanManage(context);
 
     const subscription = await this.subscriptionRepo.findByOrganizationId(context.organizationId);
     if (!subscription) {
@@ -213,9 +218,7 @@ export class SubscriptionUseCase {
   }
 
   async reactivate(context: AuthContext): Promise<void> {
-    if (context.role !== LawyerRole.OWNER) {
-      throw new ForbiddenError('Only the organization owner can manage subscriptions', 'errors.ownerOnlySubscription');
-    }
+    this.assertCanManage(context);
 
     const subscription = await this.subscriptionRepo.findByOrganizationId(context.organizationId);
     if (!subscription) {

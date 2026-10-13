@@ -24,6 +24,7 @@ export function authenticate(event: APIGatewayProxyEvent): AuthContext {
       lawyerId: payload.sub,
       organizationId: payload.organizationId,
       role: payload.role as LawyerRole,
+      isSuperAdmin: payload.isSuperAdmin === true,
     };
   } catch {
     throw new UnauthorizedError('Invalid or expired token');

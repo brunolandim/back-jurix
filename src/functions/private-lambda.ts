@@ -144,8 +144,8 @@ const routes: Route<AuthContext>[] = [
     const cases = await legalCaseUseCase.list(context.organizationId);
     return success(cases);
   }},
-  { method: 'get', pattern: 'cases/:id', handler: async ({ params }) => {
-    const legalCase = await legalCaseUseCase.getById(params.id);
+  { method: 'get', pattern: 'cases/:id', handler: async ({ context, params }) => {
+    const legalCase = await legalCaseUseCase.getById(params.id, context);
     return success(legalCase);
   }},
   { method: 'post', pattern: 'cases', handler: async ({ event, context }) => {

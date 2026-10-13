@@ -101,6 +101,7 @@ model Lawyer {
   oab            String     @unique
   specialty      String?
   role           LawyerRole @default(lawyer)
+  isSuperAdmin         Boolean     @default(false) @map("is_super_admin")
   active               Boolean     @default(true)
   avatarColor          AvatarColor @default(default) @map("avatar_color")
   passwordResetCode    String?     @map("password_reset_code")

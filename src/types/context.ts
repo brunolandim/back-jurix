@@ -4,4 +4,5 @@ export interface AuthContext {
   lawyerId: string;
   organizationId: string;
   role: LawyerRole;
+  isSuperAdmin: boolean;
 }

@@ -33,7 +33,7 @@ export class LawyerUseCase {
   }
 
   async create(input: CreateLawyerInput, context: AuthContext): Promise<LawyerPublic> {
-    await this.planEnforcer.enforce(context.organizationId, 'lawyers');
+    await this.planEnforcer.enforce(context, 'lawyers');
 
     if (!([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
       throw new ForbiddenError('Only owner or admin can create lawyers', 'errors.ownerAdminOnlyCreate');
@@ -66,6 +66,17 @@ export class LawyerUseCase {
 
     if (!lawyer || lawyer.organizationId !== context.organizationId) {
       throw new NotFoundError('Lawyer', id);
+    }
+
+    const isSelf = id === context.lawyerId;
+    const isManager = ([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role);
+
+    if (!isSelf && !isManager) {
+      throw new ForbiddenError('Only owner or admin can edit other lawyers', 'errors.ownerAdminOnlyEdit');
+    }
+
+    if (!isSelf && lawyer.role === LawyerRole.OWNER && context.role !== LawyerRole.OWNER) {
+      throw new ForbiddenError('Only the owner can edit the owner', 'errors.ownerOnlyEditOwner');
     }
 
     if (input.active !== undefined && !([LawyerRole.OWNER, LawyerRole.ADMIN] as LawyerRole[]).includes(context.role)) {
