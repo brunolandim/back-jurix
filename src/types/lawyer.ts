@@ -11,6 +11,7 @@ export interface Lawyer {
   oab: string;
   specialty: string | null;
   role: LawyerRole;
+  isSuperAdmin: boolean;
   active: boolean;
   avatarColor: AvatarColor;
   passwordResetCode: string | null;
@@ -29,6 +30,7 @@ export interface LawyerPublic {
   oab: string;
   specialty: string | null;
   role: LawyerRole;
+  isSuperAdmin: boolean;
   active: boolean;
   avatarColor: AvatarColor;
   createdAt: Date;

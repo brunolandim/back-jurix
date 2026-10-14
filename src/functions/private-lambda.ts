@@ -51,6 +51,7 @@ import {
 import { getPrisma } from '../db/prisma';
 import type { AuthContext } from '../types';
 import { DEFAULT_PASSWORD } from '../config/constants';
+import { UnauthorizedError } from '../errors';
 
 
 const prisma = getPrisma();
@@ -83,7 +84,7 @@ const routes: Route<AuthContext>[] = [
   { method: 'put', pattern: 'organizations', handler: async ({ event, context }) => {
     const body = parseBody(event);
     const input = validate(updateOrganizationSchema, body);
-    const org = await organizationUseCase.update(context.organizationId, input);
+    const org = await organizationUseCase.update(context.organizationId, input, context);
     return success(org);
   }},
 
@@ -144,8 +145,8 @@ const routes: Route<AuthContext>[] = [
     const cases = await legalCaseUseCase.list(context.organizationId);
     return success(cases);
   }},
-  { method: 'get', pattern: 'cases/:id', handler: async ({ params }) => {
-    const legalCase = await legalCaseUseCase.getById(params.id);
+  { method: 'get', pattern: 'cases/:id', handler: async ({ context, params }) => {
+    const legalCase = await legalCaseUseCase.getById(params.id, context);
     return success(legalCase);
   }},
   { method: 'post', pattern: 'cases', handler: async ({ event, context }) => {
@@ -320,7 +321,21 @@ export const handler = async (
       return success({});
     }
 
-    const authContext = authenticate(event);
+    const tokenContext = authenticate(event);
+
+    // The token alone is not trusted: deactivated lawyers and role or
+    // super admin changes must take effect immediately.
+    const lawyer = await lawyerRepo.findById(tokenContext.lawyerId);
+    if (!lawyer || !lawyer.active) {
+      throw new UnauthorizedError('Account is inactive', 'errors.accountInactive');
+    }
+
+    const authContext: AuthContext = {
+      lawyerId: lawyer.id,
+      organizationId: lawyer.organizationId,
+      role: lawyer.role,
+      isSuperAdmin: lawyer.isSuperAdmin,
+    };
     const method = event.httpMethod.toLowerCase();
     const path = event.path;
 

@@ -35,6 +35,7 @@ export interface CreateLegalCaseInput {
   order: number;
   assignedTo?: string;
   createdBy: string;
+  active?: boolean;
 }
 
 export interface UpdateLegalCaseInput {

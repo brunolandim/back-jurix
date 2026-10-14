@@ -1,5 +1,6 @@
 import type { APIGatewayProxyResult } from 'aws-lambda';
-import { AppError } from '../errors';
+import { Prisma } from '@prisma/client';
+import { AppError, ConflictError } from '../errors';
 
 const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
@@ -55,6 +56,14 @@ export function badRequest(message: string): APIGatewayProxyResult {
 }
 
 export function error(err: unknown): APIGatewayProxyResult {
+  // Unique constraint violation (e.g. a case number that already exists)
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    const target = err.meta?.target;
+    const field = Array.isArray(target) ? target.join(',') : typeof target === 'string' ? target : undefined;
+    const messageKey = field?.includes('number') ? 'errors.caseNumberInUse' : 'errors.alreadyExists';
+    return error(new ConflictError('Resource already exists', field, messageKey));
+  }
+
   if (err instanceof AppError) {
     return {
       statusCode: err.statusCode,

@@ -53,9 +53,9 @@ export const PLANS: Record<string, PlanDefinition> = {
     type: 'pro',
     price: 14700,
     limits: {
-      lawyers: 3,
-      activeCases: 50,
-      shareLinks: 50,
+      lawyers: 1,
+      activeCases: 30,
+      shareLinks: 30,
       documents: null,
     },
     features: {
@@ -68,8 +68,8 @@ export const PLANS: Record<string, PlanDefinition> = {
     price: 29700,
     limits: {
       lawyers: 10,
-      activeCases: 300,
-      shareLinks: 300,
+      activeCases: 150,
+      shareLinks: 150,
       documents: null,
     },
     features: {

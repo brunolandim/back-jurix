@@ -8,6 +8,9 @@
 # Secrets necessários no GitHub (Settings → Secrets → Actions):
 #   - AWS_ACCESS_KEY_ID
 #   - AWS_SECRET_ACCESS_KEY
+#
+# O usuário IAM dessas chaves precisa de ssm:GetParameter (com
+# decrypt) em /jurix/<ambiente>/database_url para rodar as migrations.
 # ======================================================
 
 name: Deploy
@@ -77,6 +80,18 @@ jobs:
           cp -r node_modules/.prisma dist/node_modules/.prisma
 
           cd dist && zip -r functions.zip . && cd ..
+
+      # Aplica as migrations antes de atualizar as Lambdas: se falhar,
+      # o deploy para e o código antigo continua no ar.
+      - name: Run database migrations
+        run: |
+          DATABASE_URL=$(aws ssm get-parameter \
+            --name "/jurix/${{ env.ENVIRONMENT }}/database_url" \
+            --with-decryption \
+            --query Parameter.Value \
+            --output text)
+          echo "::add-mask::$DATABASE_URL"
+          DATABASE_URL="$DATABASE_URL" npx prisma migrate deploy
 
       - name: Upload to S3
         run: aws s3 cp dist/functions.zip s3://${{ env.S3_BUCKET }}/deploy/functions.zip

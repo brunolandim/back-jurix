@@ -37,6 +37,7 @@ export class AuthUseCase {
       sub: lawyer.id,
       organizationId: lawyer.organizationId,
       role: lawyer.role,
+      isSuperAdmin: lawyer.isSuperAdmin,
     });
 
     return {

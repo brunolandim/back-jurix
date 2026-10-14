@@ -52,4 +52,5 @@ export interface SubscriptionInfo {
   };
   trialEndsAt: Date | null;
   cancelAtPeriodEnd: boolean;
+  exempt: boolean;
 }
